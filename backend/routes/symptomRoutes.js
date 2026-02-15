@@ -7,6 +7,44 @@ const express = require('express');
 const router = express.Router();
 const SymptomCheck = require('../models/SymptomCheck');
 const { protect } = require('../middleware/auth');
+const { analyzeSymptoms: geminiAnalyze } = require('../services/geminiService');
+
+/**
+ * @route   POST /api/symptoms/analyze-public
+ * @desc    Public symptom analysis (no login required) - uses Gemini AI
+ * @access  Public
+ */
+router.post('/analyze-public', async (req, res) => {
+    try {
+        const { symptoms } = req.body;
+
+        if (!symptoms || symptoms.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a description of your symptoms'
+            });
+        }
+
+        // Use Gemini AI for analysis (doesn't save to database)
+        const analysis = await geminiAnalyze(symptoms);
+
+        res.status(200).json({
+            success: true,
+            message: 'Symptoms analyzed successfully',
+            data: {
+                symptoms,
+                analysis
+            }
+        });
+    } catch (error) {
+        console.error('Error in public symptom analysis:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while analyzing symptoms',
+            error: error.message
+        });
+    }
+});
 
 /**
  * @route   POST /api/symptoms/check

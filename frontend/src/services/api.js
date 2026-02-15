@@ -226,6 +226,12 @@ export const symptomsAPI = {
         return response.data;
     },
 
+    // Public analysis (no login required)
+    analyzePublic: async (symptoms) => {
+        const response = await api.post('/symptoms/analyze-public', { symptoms });
+        return response.data;
+    },
+
     getHistory: async (limit = 10) => {
         const response = await api.get('/symptoms/history', { params: { limit } });
         return response.data;

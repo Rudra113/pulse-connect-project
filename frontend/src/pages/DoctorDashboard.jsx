@@ -139,17 +139,17 @@ const DoctorDashboard = ({ user, onLogout }) => {
   // Show pending approval message for unapproved doctors
   if (!isApproved) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <DashboardHeader
           user={user}
           onLogout={onLogout}
           portalLabel="Doctor Portal"
         />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-gray-900/30 p-8">
+            <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
-                className="w-10 h-10 text-yellow-600"
+                className="w-10 h-10 text-yellow-600 dark:text-yellow-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -162,37 +162,41 @@ const DoctorDashboard = ({ user, onLogout }) => {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               {user?.status === "pending"
                 ? "Pending Approval"
                 : user?.status === "rejected"
                   ? "Registration Rejected"
                   : "Account Suspended"}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {user?.status === "pending"
                 ? "Your doctor registration is being reviewed by our admin team. You will be notified once your account is approved."
                 : user?.status === "rejected"
                   ? "Unfortunately, your registration was not approved. Please contact support for more information."
                   : "Your account has been suspended. Please contact support for assistance."}
             </p>
-            <div className="bg-gray-50 rounded-xl p-4 text-left">
-              <h3 className="font-medium text-gray-900 mb-2">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-left">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                 Account Details:
               </h3>
-              <p className="text-sm text-gray-600">Name: {user?.name}</p>
-              <p className="text-sm text-gray-600">Email: {user?.email}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Name: {user?.name}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Email: {user?.email}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Specialty: {user?.specialty || "Not specified"}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Status:{" "}
                 <span className="capitalize font-medium">{user?.status}</span>
               </p>
             </div>
             <button
               onClick={onLogout}
-              className="mt-6 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition"
+              className="mt-6 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition"
             >
               Sign Out
             </button>
@@ -203,7 +207,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <DashboardHeader
         user={user}
         onLogout={onLogout}
@@ -213,29 +217,37 @@ const DoctorDashboard = ({ user, onLogout }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-md">
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md dark:shadow-gray-900/30">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.total}
             </div>
-            <div className="text-sm text-gray-500">Patients Today</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Patients Today
+            </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-md">
-            <div className="text-2xl font-bold text-rose-600">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md dark:shadow-gray-900/30">
+            <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
               {stats.waiting}
             </div>
-            <div className="text-sm text-gray-500">In Queue</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              In Queue
+            </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-md">
-            <div className="text-2xl font-bold text-teal-600">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md dark:shadow-gray-900/30">
+            <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
               {stats.completed}
             </div>
-            <div className="text-sm text-gray-500">Completed</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Completed
+            </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-md">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md dark:shadow-gray-900/30">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {totalUnread}
             </div>
-            <div className="text-sm text-gray-500">Unread Chats</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Unread Chats
+            </div>
           </div>
         </div>
 
@@ -246,7 +258,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
             className={`px-6 py-3 rounded-xl font-medium transition ${
               activeView === "queue"
                 ? "bg-teal-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Patient Queue
@@ -256,7 +268,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
             className={`px-6 py-3 rounded-xl font-medium transition ${
               activeView === "chat"
                 ? "bg-teal-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Messages
@@ -270,50 +282,52 @@ const DoctorDashboard = ({ user, onLogout }) => {
 
         {/* Patient Queue View */}
         {activeView === "queue" && (
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-900">Patient Queue</h2>
-              <p className="text-gray-500 text-sm mt-1">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Patient Queue
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 Patients waiting for consultation
               </p>
             </div>
 
             {loading ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 Loading queue...
               </div>
             ) : patientQueue.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <User className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <User className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
                 <p>No patients in queue</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Patient
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Condition
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Urgency
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Wait Time
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {patientQueue.map((patient) => (
                       <tr
                         key={patient._id}
-                        className="hover:bg-gray-50 transition"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -327,10 +341,10 @@ const DoctorDashboard = ({ user, onLogout }) => {
                               <User className="w-5 h-5 text-white" />
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
                                 {patient.patientId?.name}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
                                 {patient.patientId?.age
                                   ? `${patient.patientId.age} years old`
                                   : "Age not provided"}
@@ -339,7 +353,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {patient.condition}
                           </div>
                         </td>
@@ -350,7 +364,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                             {patient.urgency}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {patient.waitTime}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -374,20 +388,20 @@ const DoctorDashboard = ({ user, onLogout }) => {
         {activeView === "chat" && (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Chat List */}
-            <div className="lg:col-span-1 bg-white rounded-2xl shadow-md overflow-hidden">
-              <div className="p-4 border-b">
+            <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search patients..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
-              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 {chats.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                     No chats yet
                   </div>
                 ) : (
@@ -395,12 +409,14 @@ const DoctorDashboard = ({ user, onLogout }) => {
                     <button
                       key={chat._id}
                       onClick={() => setSelectedChat(chat)}
-                      className={`w-full p-4 text-left hover:bg-gray-50 transition ${
-                        selectedChat?._id === chat._id ? "bg-teal-50" : ""
+                      className={`w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                        selectedChat?._id === chat._id
+                          ? "bg-teal-50 dark:bg-teal-900/30"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {chat.participant?.name}
                         </span>
                         {chat.unreadCount > 0 && (
@@ -409,10 +425,10 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {chat.lastMessage?.text || "No messages yet"}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         {chat.lastMessage?.sentAt
                           ? new Date(
                               chat.lastMessage.sentAt,
@@ -429,24 +445,26 @@ const DoctorDashboard = ({ user, onLogout }) => {
             <div className="lg:col-span-2 grid lg:grid-cols-3 gap-6">
               {/* Chat Window */}
               <div
-                className="lg:col-span-2 bg-white rounded-2xl shadow-md flex flex-col"
+                className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 flex flex-col"
                 style={{ height: "600px" }}
               >
                 {selectedChat ? (
                   <>
-                    <div className="p-4 border-b flex items-center justify-between">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
                           {selectedChat.participant?.name}
                         </h3>
-                        <p className="text-sm text-gray-500">Active now</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Active now
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 bg-blue-100 rounded-lg hover:bg-blue-200 transition">
-                          <Video className="w-5 h-5 text-blue-600" />
+                        <button className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/50 transition">
+                          <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </button>
-                        <button className="p-2 bg-teal-100 rounded-lg hover:bg-teal-200 transition">
-                          <FileText className="w-5 h-5 text-teal-600" />
+                        <button className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-800/50 transition">
+                          <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                         </button>
                       </div>
                     </div>
@@ -461,7 +479,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
                               msg.senderId?._id === user?._id
                                 ? "bg-teal-600 text-white"
-                                : "bg-gray-100 text-gray-900"
+                                : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                             }`}
                           >
                             <p className="text-sm">{msg.text}</p>
@@ -469,7 +487,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                               className={`text-xs mt-1 ${
                                 msg.senderId?._id === user?._id
                                   ? "text-teal-100"
-                                  : "text-gray-500"
+                                  : "text-gray-500 dark:text-gray-400"
                               }`}
                             >
                               {new Date(msg.createdAt).toLocaleTimeString()}
@@ -479,7 +497,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                       ))}
                     </div>
 
-                    <div className="p-4 border-t">
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-2">
                         <input
                           type="text"
@@ -489,7 +507,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                             e.key === "Enter" && handleSendMessage()
                           }
                           placeholder="Type your message..."
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
                         />
                         <button
                           onClick={handleSendMessage}
@@ -501,9 +519,9 @@ const DoctorDashboard = ({ user, onLogout }) => {
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
                     <div className="text-center">
-                      <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
                       <p>Select a chat to start messaging</p>
                     </div>
                   </div>
@@ -511,14 +529,14 @@ const DoctorDashboard = ({ user, onLogout }) => {
               </div>
 
               {/* Prescription Pad */}
-              <div className="bg-white rounded-2xl shadow-md p-4">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                  <FileText className="w-5 h-5 mr-2 text-teal-600" />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
                   Quick Prescription
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Medication
                     </label>
                     <input
@@ -531,11 +549,11 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           medication: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Dosage
                     </label>
                     <input
@@ -548,11 +566,11 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           dosage: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Frequency
                     </label>
                     <input
@@ -565,11 +583,11 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           frequency: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Duration
                     </label>
                     <input
@@ -582,7 +600,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                           duration: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
                   <button className="w-full bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition text-sm font-medium flex items-center justify-center">

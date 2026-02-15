@@ -4,6 +4,7 @@
  */
 
 const mongoose = require('mongoose');
+const { analyzeSymptoms: geminiAnalyze } = require('../services/geminiService');
 
 const symptomCheckSchema = new mongoose.Schema({
     // Reference to the patient
@@ -42,10 +43,22 @@ const symptomCheckSchema = new mongoose.Schema({
             enum: ['low', 'medium', 'high', 'emergency'],
             default: 'low'
         },
+        urgencyMessage: {
+            type: String,
+            default: ''
+        },
         recommendations: [String],
+        shouldConsultDoctor: {
+            type: Boolean,
+            default: true
+        },
+        consultationMessage: {
+            type: String,
+            default: 'Please consider consulting a healthcare professional for proper diagnosis and treatment.'
+        },
         disclaimer: {
             type: String,
-            default: 'This is not medical advice. Please consult a healthcare professional for proper diagnosis.'
+            default: 'This AI-powered analysis is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment.'
         }
     },
 
@@ -68,59 +81,44 @@ const symptomCheckSchema = new mongoose.Schema({
 symptomCheckSchema.index({ patientId: 1, createdAt: -1 });
 
 /**
- * Method to analyze symptoms (placeholder for AI integration)
+ * Method to analyze symptoms using Gemini AI
  */
 symptomCheckSchema.methods.analyzeSymptoms = async function () {
-    // This is a placeholder for actual AI/ML analysis
-    // In production, this would call an AI service
+    try {
+        // Use Gemini AI for symptom analysis
+        const analysis = await geminiAnalyze(this.symptoms);
 
-    const symptoms = this.symptoms.toLowerCase();
-    const analysis = {
-        possibleConditions: [],
-        urgencyLevel: 'low',
-        recommendations: [],
-        disclaimer: 'This is not medical advice. Please consult a healthcare professional for proper diagnosis.'
-    };
+        this.analysis = analysis;
+        await this.save();
 
-    // Simple keyword-based analysis (placeholder for actual AI)
-    if (symptoms.includes('chest pain') || symptoms.includes('shortness of breath')) {
-        analysis.urgencyLevel = 'high';
-        analysis.recommendations.push('Seek immediate medical attention');
-        analysis.possibleConditions.push({
-            name: 'Cardiac-related condition',
-            probability: 60,
-            description: 'Chest pain with shortness of breath may indicate a heart-related issue'
-        });
+        return analysis;
+    } catch (error) {
+        console.error('Error in AI symptom analysis:', error);
+
+        // Fallback to basic analysis if AI fails
+        const fallbackAnalysis = {
+            possibleConditions: [{
+                name: 'General health concern',
+                probability: 50,
+                description: 'Your symptoms require evaluation by a healthcare professional.'
+            }],
+            urgencyLevel: 'medium',
+            urgencyMessage: '🟠 We recommend consulting with a doctor for a proper evaluation of your symptoms.',
+            recommendations: [
+                'Monitor your symptoms closely',
+                'Rest and stay hydrated',
+                'Schedule a consultation with a healthcare provider'
+            ],
+            shouldConsultDoctor: true,
+            consultationMessage: 'Please consult a healthcare professional for proper diagnosis and treatment.',
+            disclaimer: 'This analysis is for informational purposes only and is not a substitute for professional medical advice.'
+        };
+
+        this.analysis = fallbackAnalysis;
+        await this.save();
+
+        return fallbackAnalysis;
     }
-
-    if (symptoms.includes('fever') || symptoms.includes('headache')) {
-        analysis.possibleConditions.push({
-            name: 'Viral infection',
-            probability: 70,
-            description: 'Common symptoms of viral infections'
-        });
-        analysis.recommendations.push('Rest and stay hydrated');
-        analysis.recommendations.push('Monitor temperature');
-    }
-
-    if (symptoms.includes('cough')) {
-        analysis.possibleConditions.push({
-            name: 'Upper respiratory infection',
-            probability: 65,
-            description: 'May indicate a common cold or other respiratory condition'
-        });
-    }
-
-    // Default recommendation
-    if (analysis.recommendations.length === 0) {
-        analysis.recommendations.push('Monitor your symptoms');
-        analysis.recommendations.push('Consider scheduling a consultation if symptoms persist');
-    }
-
-    this.analysis = analysis;
-    await this.save();
-
-    return analysis;
 };
 
 const SymptomCheck = mongoose.model('SymptomCheck', symptomCheckSchema);

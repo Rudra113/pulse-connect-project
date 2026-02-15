@@ -5,10 +5,12 @@
 
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { User, Stethoscope } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { User, Stethoscope, Sun, Moon } from "lucide-react";
 
 function RegisterPage({ onSwitchToLogin }) {
   const { register, error, clearError } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   // Role selection state
   const [selectedRole, setSelectedRole] = useState("patient");
@@ -132,11 +134,11 @@ function RegisterPage({ onSwitchToLogin }) {
   // Show success message for doctor registration
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-800 dark:via-teal-800 dark:to-cyan-900 flex items-center justify-center p-4 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
-              className="w-10 h-10 text-amber-600"
+              className="w-10 h-10 text-amber-600 dark:text-amber-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -149,16 +151,16 @@ function RegisterPage({ onSwitchToLogin }) {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Registration Submitted!
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Your doctor account has been created and is pending admin approval.
             You will be able to access the dashboard once an administrator
             reviews and approves your credentials.
           </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-            <p className="text-amber-800 text-sm">
+          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+            <p className="text-amber-800 dark:text-amber-300 text-sm">
               <strong>What's next?</strong>
               <br />
               An admin will review your qualifications and license information.
@@ -177,7 +179,20 @@ function RegisterPage({ onSwitchToLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-800 dark:via-teal-800 dark:to-cyan-900 flex items-center justify-center p-4 transition-colors duration-300">
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-6 right-6 z-50 p-3 rounded-xl bg-white/20 dark:bg-gray-800/50 hover:bg-white/30 dark:hover:bg-gray-700/50 backdrop-blur-sm transition-colors"
+        aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDarkMode ? (
+          <Sun className="w-5 h-5 text-yellow-300" />
+        ) : (
+          <Moon className="w-5 h-5 text-white" />
+        )}
+      </button>
+
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
@@ -212,17 +227,17 @@ function RegisterPage({ onSwitchToLogin }) {
         </div>
 
         {/* Register Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">
             Create Account
           </h2>
-          <p className="text-gray-500 text-center mb-6">
+          <p className="text-gray-500 dark:text-gray-400 text-center mb-6">
             Fill in your details to get started
           </p>
 
           {/* Role Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               I am registering as a:
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -231,8 +246,8 @@ function RegisterPage({ onSwitchToLogin }) {
                 onClick={() => setSelectedRole("patient")}
                 className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
                   selectedRole === "patient"
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400"
                 }`}
               >
                 <User className="w-8 h-8" />
@@ -243,8 +258,8 @@ function RegisterPage({ onSwitchToLogin }) {
                 onClick={() => setSelectedRole("doctor")}
                 className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
                   selectedRole === "doctor"
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400"
                 }`}
               >
                 <Stethoscope className="w-8 h-8" />
@@ -252,7 +267,7 @@ function RegisterPage({ onSwitchToLogin }) {
               </button>
             </div>
             {selectedRole === "doctor" && (
-              <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+              <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 p-2 rounded-lg">
                 Note: Doctor accounts require admin approval before access is
                 granted.
               </p>
@@ -261,9 +276,9 @@ function RegisterPage({ onSwitchToLogin }) {
 
           {/* Error Alert */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start">
               <svg
-                className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0"
+                className="w-5 h-5 text-red-500 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -275,20 +290,20 @@ function RegisterPage({ onSwitchToLogin }) {
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-red-700">{error}</span>
+              <span className="text-red-700 dark:text-red-400">{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -307,23 +322,25 @@ function RegisterPage({ onSwitchToLogin }) {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="John Doe"
-                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.name ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.name ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                 />
               </div>
               {formErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {formErrors.name}
+                </p>
               )}
             </div>
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -342,23 +359,25 @@ function RegisterPage({ onSwitchToLogin }) {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.email ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                 />
               </div>
               {formErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {formErrors.email}
+                </p>
               )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -377,7 +396,7 @@ function RegisterPage({ onSwitchToLogin }) {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className={`w-full pl-10 pr-12 py-3 border ${formErrors.password ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                  className={`w-full pl-10 pr-12 py-3 border ${formErrors.password ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                 />
                 <button
                   type="button"
@@ -422,7 +441,7 @@ function RegisterPage({ onSwitchToLogin }) {
                 </button>
               </div>
               {formErrors.password && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {formErrors.password}
                 </p>
               )}
@@ -430,13 +449,13 @@ function RegisterPage({ onSwitchToLogin }) {
 
             {/* Confirm Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -455,11 +474,11 @@ function RegisterPage({ onSwitchToLogin }) {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.confirmPassword ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                  className={`w-full pl-10 pr-4 py-3 border ${formErrors.confirmPassword ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                 />
               </div>
               {formErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {formErrors.confirmPassword}
                 </p>
               )}
@@ -468,22 +487,22 @@ function RegisterPage({ onSwitchToLogin }) {
             {/* Doctor-Specific Fields */}
             {selectedRole === "doctor" && (
               <>
-                <div className="border-t border-gray-200 pt-4 mt-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Professional Information
                   </h3>
                 </div>
 
                 {/* Specialty Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Medical Specialty
                   </label>
                   <select
                     name="specialty"
                     value={formData.specialty}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border ${formErrors.specialty ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                    className={`w-full px-4 py-3 border ${formErrors.specialty ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                   >
                     <option value="">Select your specialty</option>
                     <option value="General Practice">General Practice</option>
@@ -501,7 +520,7 @@ function RegisterPage({ onSwitchToLogin }) {
                     <option value="Other">Other</option>
                   </select>
                   {formErrors.specialty && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                       {formErrors.specialty}
                     </p>
                   )}
@@ -509,7 +528,7 @@ function RegisterPage({ onSwitchToLogin }) {
 
                 {/* Qualifications Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Qualifications
                   </label>
                   <input
@@ -518,10 +537,10 @@ function RegisterPage({ onSwitchToLogin }) {
                     value={formData.qualifications}
                     onChange={handleChange}
                     placeholder="e.g., MBBS, MD, FRCS"
-                    className={`w-full px-4 py-3 border ${formErrors.qualifications ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                    className={`w-full px-4 py-3 border ${formErrors.qualifications ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                   />
                   {formErrors.qualifications && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                       {formErrors.qualifications}
                     </p>
                   )}
@@ -529,7 +548,7 @@ function RegisterPage({ onSwitchToLogin }) {
 
                 {/* Experience Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Years of Experience
                   </label>
                   <input
@@ -540,10 +559,10 @@ function RegisterPage({ onSwitchToLogin }) {
                     placeholder="e.g., 5"
                     min="0"
                     max="50"
-                    className={`w-full px-4 py-3 border ${formErrors.experience ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                    className={`w-full px-4 py-3 border ${formErrors.experience ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                   />
                   {formErrors.experience && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                       {formErrors.experience}
                     </p>
                   )}
@@ -551,7 +570,7 @@ function RegisterPage({ onSwitchToLogin }) {
 
                 {/* License Number Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Medical License Number
                   </label>
                   <input
@@ -560,10 +579,10 @@ function RegisterPage({ onSwitchToLogin }) {
                     value={formData.licenseNumber}
                     onChange={handleChange}
                     placeholder="e.g., MED-12345"
-                    className={`w-full px-4 py-3 border ${formErrors.licenseNumber ? "border-red-500" : "border-gray-300"} rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
+                    className={`w-full px-4 py-3 border ${formErrors.licenseNumber ? "border-red-500" : "border-gray-300 dark:border-gray-600"} bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all`}
                   />
                   {formErrors.licenseNumber && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                       {formErrors.licenseNumber}
                     </p>
                   )}
@@ -607,12 +626,12 @@ function RegisterPage({ onSwitchToLogin }) {
           </form>
 
           {/* Divider */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-center text-gray-600">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+            <p className="text-center text-gray-600 dark:text-gray-400">
               Already have an account?{" "}
               <button
                 onClick={onSwitchToLogin}
-                className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                className="font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
               >
                 Sign in
               </button>

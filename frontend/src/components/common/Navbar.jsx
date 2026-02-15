@@ -45,6 +45,12 @@ const Navbar = ({ onLoginClick }) => {
             >
               About
             </a>
+            <a
+              href="#symptom-checker"
+              className="text-lg font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors py-2 flex items-center space-x-1"
+            >
+              <span>Try AI Symptom Checker</span>
+            </a>
 
             {/* Theme Toggle Button */}
             <button
@@ -121,6 +127,13 @@ const Navbar = ({ onLoginClick }) => {
               onClick={() => setMobileMenuOpen(false)}
             >
               About
+            </a>
+            <a
+              href="#symptom-checker"
+              className="block text-lg font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl px-4 py-4 transition-all"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              🩺 Try AI Symptom Checker
             </a>
             <button
               onClick={() => {

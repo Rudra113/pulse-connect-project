@@ -3,7 +3,7 @@
  * Modern, accessible landing page optimized for all ages
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   User,
   MessageSquare,
@@ -22,11 +22,43 @@ import {
   CheckCircle,
   Phone,
   Mail,
+  AlertCircle,
+  Stethoscope,
+  Check,
 } from "lucide-react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
+import { symptomsAPI } from "../services/api";
 
 const LandingPage = ({ onLoginClick }) => {
+  // Symptom checker state
+  const [symptomText, setSymptomText] = useState("");
+  const [symptomAnalysis, setSymptomAnalysis] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  // Analyze symptoms using public API
+  const handleAnalyzeSymptoms = async () => {
+    if (!symptomText.trim()) return;
+
+    try {
+      setAnalyzing(true);
+      const response = await symptomsAPI.analyzePublic(symptomText);
+      if (response.success) {
+        setSymptomAnalysis(response.data.analysis);
+      }
+    } catch (error) {
+      console.error("Error analyzing symptoms:", error);
+      alert("Failed to analyze symptoms. Please try again.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Handle book consultation - redirect to login
+  const handleBookConsultation = () => {
+    onLoginClick();
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <Navbar onLoginClick={onLoginClick} />
@@ -499,6 +531,269 @@ const LandingPage = ({ onLoginClick }) => {
                       24/7 Available
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Symptom Checker Section */}
+      <section
+        id="symptom-checker"
+        className="py-20 md:py-28 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full text-lg font-medium mb-4">
+              🩺 Try This Feature
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              AI Symptom Checker
+            </h2>
+            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Experience our AI-powered symptom analysis. Describe how you feel
+              and get instant health insights — no account needed!
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Describe Your Symptoms
+                </h3>
+                <span className="text-sm bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/50 dark:to-indigo-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-medium">
+                  Powered by Google Gemini AI
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <textarea
+                value={symptomText}
+                onChange={(e) => setSymptomText(e.target.value)}
+                placeholder="Example: I've been experiencing severe headaches for the past 3 days, along with a mild fever around 100°F. The headache is worse in the morning and I also feel nauseous."
+                className="w-full h-40 px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-lg"
+              />
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleAnalyzeSymptoms}
+                  disabled={analyzing || !symptomText.trim()}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-lg"
+                >
+                  {analyzing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span>Analyzing with AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="w-5 h-5 mr-2" />
+                      <span>Analyze Symptoms</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setSymptomText("");
+                    setSymptomAnalysis(null);
+                  }}
+                  className="sm:w-auto bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition font-semibold text-lg"
+                >
+                  Clear
+                </button>
+              </div>
+
+              {/* Analysis Results */}
+              {symptomAnalysis && (
+                <div className="mt-6 space-y-4">
+                  {/* Urgency Level Banner */}
+                  <div
+                    className={`p-4 rounded-xl border-2 ${
+                      symptomAnalysis.urgencyLevel === "emergency"
+                        ? "bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700"
+                        : symptomAnalysis.urgencyLevel === "high"
+                          ? "bg-orange-50 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700"
+                          : symptomAnalysis.urgencyLevel === "medium"
+                            ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700"
+                            : "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700"
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          symptomAnalysis.urgencyLevel === "emergency"
+                            ? "bg-red-500"
+                            : symptomAnalysis.urgencyLevel === "high"
+                              ? "bg-orange-500"
+                              : symptomAnalysis.urgencyLevel === "medium"
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                        }`}
+                      >
+                        <AlertCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h4
+                          className={`font-bold text-lg ${
+                            symptomAnalysis.urgencyLevel === "emergency"
+                              ? "text-red-800 dark:text-red-200"
+                              : symptomAnalysis.urgencyLevel === "high"
+                                ? "text-orange-800 dark:text-orange-200"
+                                : symptomAnalysis.urgencyLevel === "medium"
+                                  ? "text-yellow-800 dark:text-yellow-200"
+                                  : "text-green-800 dark:text-green-200"
+                          }`}
+                        >
+                          {symptomAnalysis.urgencyLevel === "emergency"
+                            ? "🚨 Emergency"
+                            : symptomAnalysis.urgencyLevel === "high"
+                              ? "🔴 High Urgency"
+                              : symptomAnalysis.urgencyLevel === "medium"
+                                ? "🟠 Moderate Urgency"
+                                : "🟢 Low Urgency"}
+                        </h4>
+                        <p
+                          className={`mt-1 text-base ${
+                            symptomAnalysis.urgencyLevel === "emergency"
+                              ? "text-red-700 dark:text-red-300"
+                              : symptomAnalysis.urgencyLevel === "high"
+                                ? "text-orange-700 dark:text-orange-300"
+                                : symptomAnalysis.urgencyLevel === "medium"
+                                  ? "text-yellow-700 dark:text-yellow-300"
+                                  : "text-green-700 dark:text-green-300"
+                          }`}
+                        >
+                          {symptomAnalysis.urgencyMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Analysis Details Card */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 space-y-5">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <h3 className="font-bold text-gray-900 dark:text-white">
+                        AI Analysis Results
+                      </h3>
+                    </div>
+
+                    {/* Possible Conditions */}
+                    {symptomAnalysis.possibleConditions?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                          Possible Conditions:
+                        </p>
+                        <div className="space-y-3">
+                          {symptomAnalysis.possibleConditions.map(
+                            (condition, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-gray-900 dark:text-white">
+                                    {condition.name}
+                                  </span>
+                                  <span
+                                    className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                      condition.probability >= 70
+                                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                                        : condition.probability >= 50
+                                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
+                                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                    }`}
+                                  >
+                                    {condition.probability}% match
+                                  </span>
+                                </div>
+                                {condition.description && (
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {condition.description}
+                                  </p>
+                                )}
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommendations */}
+                    {symptomAnalysis.recommendations?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Recommendations:
+                        </p>
+                        <ul className="space-y-2">
+                          {symptomAnalysis.recommendations.map((rec, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start text-base text-gray-600 dark:text-gray-400"
+                            >
+                              <Check className="w-4 h-4 text-teal-500 mr-2 mt-1 flex-shrink-0" />
+                              {rec}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Book Consultation CTA */}
+                  {symptomAnalysis.shouldConsultDoctor && (
+                    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 rounded-xl p-6 border border-teal-200 dark:border-teal-700">
+                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div className="flex items-start space-x-4">
+                          <div className="w-14 h-14 bg-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <Stethoscope className="w-7 h-7 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-teal-800 dark:text-teal-200 text-lg mb-1">
+                              Ready to Consult a Doctor?
+                            </h4>
+                            <p className="text-base text-teal-700 dark:text-teal-300">
+                              Sign up or login to book a consultation with our
+                              certified healthcare professionals.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleBookConsultation}
+                          className="w-full md:w-auto bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition shadow-lg flex items-center justify-center space-x-2 text-lg"
+                        >
+                          <Calendar className="w-5 h-5" />
+                          <span>Login to Book</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Disclaimer */}
+                  {symptomAnalysis.disclaimer && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center">
+                      {symptomAnalysis.disclaimer}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Always visible disclaimer */}
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-base text-blue-800 dark:text-blue-200">
+                  <p className="font-medium mb-1">This is not medical advice</p>
+                  <p>
+                    AI symptom analysis should not replace professional medical
+                    consultation. For emergencies, call 911.
+                  </p>
                 </div>
               </div>
             </div>
