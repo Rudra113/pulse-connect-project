@@ -4,8 +4,9 @@
  */
 
 import React from "react";
-import { Heart, Bell, User, LogOut, Sun, Moon } from "lucide-react";
+import { Activity, User, LogOut, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import NotificationDropdown from "./NotificationDropdown";
 
 const DashboardHeader = ({ user, onLogout, portalLabel }) => {
   const { isDarkMode, toggleTheme } = useTheme();
@@ -15,9 +16,9 @@ const DashboardHeader = ({ user, onLogout, portalLabel }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Heart className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            <Activity className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              Pulse.ai
+              PulseConnect
             </span>
             {portalLabel && (
               <span className="hidden sm:inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-full text-xs font-medium">
@@ -40,10 +41,10 @@ const DashboardHeader = ({ user, onLogout, portalLabel }) => {
                 <Moon className="w-5 h-5 text-gray-600" />
               )}
             </button>
-            <button className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition">
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
-            </button>
+
+            {/* Notification Dropdown */}
+            <NotificationDropdown />
+
             <div className="hidden sm:flex items-center space-x-3">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">

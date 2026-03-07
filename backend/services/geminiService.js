@@ -22,7 +22,7 @@ async function analyzeSymptoms(symptoms) {
         }
 
         // Get the generative model
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
 
         // Create the prompt for symptom analysis
         const prompt = `You are a medical AI assistant. Analyze the following symptoms and provide a structured health assessment.
@@ -62,6 +62,8 @@ Respond ONLY with the JSON object, no other text.`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
+
+        console.log('Raw Gemini response:', text);
 
         // Parse the JSON response
         let analysis;

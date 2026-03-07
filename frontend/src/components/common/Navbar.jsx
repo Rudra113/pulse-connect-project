@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { Heart, Menu, X, Sun, Moon } from "lucide-react";
+import { Activity, Menu, X, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 
 const Navbar = ({ onLoginClick }) => {
@@ -18,10 +18,10 @@ const Navbar = ({ onLoginClick }) => {
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <Heart className="w-6 h-6 text-white" />
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Pulse.ai
+              PulseConnect
             </span>
           </div>
 

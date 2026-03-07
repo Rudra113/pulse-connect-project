@@ -27,6 +27,13 @@ const patientQueueSchema = new mongoose.Schema({
         required: [true, 'Condition is required']
     },
 
+    // Patient's age at time of consultation
+    age: {
+        type: Number,
+        min: 0,
+        max: 150
+    },
+
     // Detailed symptoms description
     symptoms: {
         type: String,
@@ -89,6 +96,12 @@ const patientQueueSchema = new mongoose.Schema({
         trim: true
     },
 
+    // Reference to the chat for this consultation
+    chatId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chat'
+    },
+
     // Position in queue (calculated virtually)
     queuePosition: {
         type: Number
@@ -107,10 +120,10 @@ patientQueueSchema.index({ patientId: 1 });
 patientQueueSchema.statics.getQueue = async function (doctorId) {
     const queue = await this.find({
         doctorId,
-        status: 'waiting'
+        status: { $in: ['waiting', 'in-consultation'] }
     })
         .populate('patientId', 'name email age avatarColor')
-        .sort({ urgency: -1, joinedAt: 1 }); // High urgency first, then by wait time
+        .sort({ status: 1, urgency: -1, joinedAt: 1 }); // in-consultation first, then high urgency, then by wait time
 
     // Add wait time and position to each entry
     return queue.map((entry, index) => {

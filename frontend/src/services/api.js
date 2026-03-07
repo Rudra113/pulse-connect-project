@@ -59,6 +59,38 @@ export const authAPI = {
     getProfile: async () => {
         const response = await api.get('/auth/me');
         return response.data;
+    },
+
+    logout: async () => {
+        const response = await api.post('/auth/logout');
+        return response.data;
+    },
+
+    // Email verification
+    verifyEmail: async (token) => {
+        const response = await api.get(`/auth/verify-email/${token}`);
+        return response.data;
+    },
+
+    resendVerification: async (email) => {
+        const response = await api.post('/auth/resend-verification', { email });
+        return response.data;
+    },
+
+    // Password reset
+    forgotPassword: async (email) => {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    verifyResetToken: async (token) => {
+        const response = await api.get(`/auth/verify-reset-token/${token}`);
+        return response.data;
+    },
+
+    resetPassword: async (token, password) => {
+        const response = await api.post(`/auth/reset-password/${token}`, { password });
+        return response.data;
     }
 };
 
@@ -193,6 +225,12 @@ export const queueAPI = {
     getMyConsultations: async () => {
         const response = await api.get('/queue/my-consultations');
         return response.data;
+    },
+
+    // Get completed consultations for doctor
+    getCompleted: async () => {
+        const response = await api.get('/queue/completed');
+        return response.data;
     }
 };
 
@@ -215,6 +253,39 @@ export const prescriptionsAPI = {
 
     update: async (id, updateData) => {
         const response = await api.put(`/prescriptions/${id}`, updateData);
+        return response.data;
+    }
+};
+
+// ==================== NOTIFICATIONS API ====================
+export const notificationsAPI = {
+    getAll: async (params = {}) => {
+        const response = await api.get('/notifications', { params });
+        return response.data;
+    },
+
+    getUnreadCount: async () => {
+        const response = await api.get('/notifications/unread-count');
+        return response.data;
+    },
+
+    markAsRead: async (id) => {
+        const response = await api.put(`/notifications/${id}/read`);
+        return response.data;
+    },
+
+    markAllAsRead: async () => {
+        const response = await api.put('/notifications/mark-all-read');
+        return response.data;
+    },
+
+    delete: async (id) => {
+        const response = await api.delete(`/notifications/${id}`);
+        return response.data;
+    },
+
+    deleteAll: async () => {
+        const response = await api.delete('/notifications');
         return response.data;
     }
 };
@@ -272,6 +343,11 @@ export const usersAPI = {
 
     getById: async (id) => {
         const response = await api.get(`/users/${id}`);
+        return response.data;
+    },
+
+    getPatientHistory: async (patientId) => {
+        const response = await api.get(`/users/${patientId}/history`);
         return response.data;
     }
 };

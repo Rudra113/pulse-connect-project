@@ -20,7 +20,7 @@ router.get('/', protect, async (req, res) => {
             participants: req.user._id,
             isActive: true
         })
-            .populate('participants', 'name email avatarColor role specialty')
+            .populate('participants', 'name email avatarColor role specialty isOnline lastSeen')
             .populate('lastMessage.senderId', 'name')
             .sort({ updatedAt: -1 });
 

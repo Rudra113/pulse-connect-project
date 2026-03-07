@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const Prescription = require('../models/Prescription');
+const Notification = require('../models/Notification');
 const { protect } = require('../middleware/auth');
 
 /**
@@ -55,6 +56,22 @@ router.post('/', protect, async (req, res) => {
             { path: 'patientId', select: 'name email' },
             { path: 'doctorId', select: 'name email specialty' }
         ]);
+
+        // Create notification for the patient
+        const medicationList = items.map(item => item.medication).join(', ');
+        await Notification.createNotification({
+            userId: patientId,
+            title: 'New Prescription',
+            message: `Dr. ${req.user.name} has prescribed you: ${medicationList}`,
+            type: 'prescription',
+            relatedId: prescription._id,
+            relatedModel: 'Prescription',
+            metadata: {
+                doctorId: req.user._id,
+                doctorName: req.user.name,
+                medications: medicationList
+            }
+        });
 
         res.status(201).json({
             success: true,

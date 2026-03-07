@@ -6,6 +6,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const PatientQueue = require('../models/PatientQueue');
+const Prescription = require('../models/Prescription');
 const { protect } = require('../middleware/auth');
 
 /**
@@ -157,6 +159,71 @@ router.get('/:id', protect, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while fetching user',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   GET /api/users/:id/history
+ * @desc    Get patient's consultation history (doctors only)
+ * @access  Private (Doctors only)
+ */
+router.get('/:id/history', protect, async (req, res) => {
+    try {
+        if (req.user.role !== 'doctor' && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only doctors can access patient history'
+            });
+        }
+
+        const patientId = req.params.id;
+
+        // Get patient info
+        const patient = await User.findById(patientId)
+            .select('name email age phone avatarColor createdAt');
+
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                message: 'Patient not found'
+            });
+        }
+
+        // Get past consultations with this doctor
+        const consultations = await PatientQueue.find({
+            patientId,
+            doctorId: req.user._id
+        })
+            .select('condition symptoms symptomDuration urgency status consultationType consultationMode consultationStartedAt consultationEndedAt notes createdAt')
+            .sort({ createdAt: -1 })
+            .limit(10);
+
+        // Get prescriptions from this doctor
+        const prescriptions = await Prescription.find({
+            patientId,
+            doctorId: req.user._id
+        })
+            .select('items diagnosis notes status issuedAt createdAt')
+            .sort({ createdAt: -1 })
+            .limit(10);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                patient,
+                consultations,
+                prescriptions,
+                totalConsultations: consultations.length,
+                totalPrescriptions: prescriptions.length
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching patient history:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching patient history',
             error: error.message
         });
     }

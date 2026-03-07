@@ -4,7 +4,17 @@
  */
 
 import React, { useState } from "react";
-import { Heart, Shield, Users, Star, Sun, Moon } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Activity,
+  Shield,
+  Users,
+  Star,
+  Sun,
+  Moon,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function LoginPage({ onLogin, onSwitchToRegister }) {
@@ -17,6 +27,7 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,8 +63,8 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
       {/* Left Side - Image/Brand */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 dark:from-teal-700 dark:to-blue-800 p-12 flex-col justify-between">
         <div className="flex items-center space-x-2 text-white">
-          <Heart className="w-10 h-10" />
-          <span className="text-3xl font-bold">Pulse.ai</span>
+          <Activity className="w-10 h-10" />
+          <span className="text-3xl font-bold">PulseConnect</span>
         </div>
         <div className="text-white">
           <h2 className="text-4xl font-bold mb-4">Welcome back!</h2>
@@ -96,9 +107,9 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
 
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
-            <Heart className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            <Activity className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              Pulse.ai
+              PulseConnect
             </span>
           </div>
 
@@ -154,14 +165,27 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -176,12 +200,12 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
                   Remember me
                 </span>
               </label>
-              <button
-                type="button"
+              <Link
+                to="/forgot-password"
                 className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             <button

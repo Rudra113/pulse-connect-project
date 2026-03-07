@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
    * Register a new user
    * @param {Object} registrationData - Can be object with all fields or individual params for backwards compatibility
    */
-  const register = async (registrationData) => {
+  const register = async (registrationData, ...args) => {
     try {
       setError(null);
 
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
         payload = registrationData;
       } else {
         // Legacy support: register(name, email, password)
-        const [name, email, password] = arguments;
+        const [name, email, password] = args;
         payload = { name, email, password };
       }
 
@@ -143,10 +143,27 @@ export const AuthProvider = ({ children }) => {
   /**
    * Logout user
    */
-  const logout = () => {
-    setAuthToken(null);
-    setUser(null);
-    setError(null);
+  const logout = async () => {
+    try {
+      // Call logout API to set offline status
+      const token = localStorage.getItem("medtracker_token");
+      if (token) {
+        await axios.post(
+          `${API_URL}/auth/logout`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      }
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
+      // Always clear local state
+      setAuthToken(null);
+      setUser(null);
+      setError(null);
+    }
   };
 
   /**

@@ -73,6 +73,13 @@ const medicationSchema = new mongoose.Schema({
     lastDoseTakenAt: {
         type: Date,
         default: null
+    },
+
+    // Additional notes (e.g., prescription details)
+    notes: {
+        type: String,
+        trim: true,
+        default: ''
     }
 }, {
     // Automatically add createdAt and updatedAt timestamps

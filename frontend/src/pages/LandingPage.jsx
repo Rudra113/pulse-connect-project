@@ -8,14 +8,12 @@ import {
   User,
   MessageSquare,
   Pill,
-  Video,
   Calendar,
   ArrowRight,
   Activity,
   FileText,
   Shield,
   TrendingUp,
-  Heart,
   Users,
   Clock,
   Star,
@@ -73,7 +71,7 @@ const LandingPage = ({ onLoginClick }) => {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <div className="inline-flex items-center space-x-2 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 px-4 py-2 rounded-full text-base font-medium mb-6">
-                <Heart className="w-5 h-5" />
+                <Activity className="w-5 h-5" />
                 <span>Trusted by 50,000+ patients</span>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
@@ -150,41 +148,15 @@ const LandingPage = ({ onLoginClick }) => {
                         Today, 2:00 PM
                       </span>
                     </div>
-                    <Video className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                    <MessageSquare className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                   </div>
                 </div>
                 <button className="w-full bg-gradient-to-r from-teal-600 to-teal-700 text-white py-4 rounded-xl text-lg font-semibold hover:from-teal-700 hover:to-teal-800 transition-all flex items-center justify-center space-x-2">
-                  <Video className="w-5 h-5" />
-                  <span>Join Video Call</span>
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Chat with our Doctor</span>
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Banner */}
-      <section className="bg-gradient-to-r from-teal-600 via-teal-700 to-blue-700 py-12 md:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            {[
-              { value: "50,000+", label: "Active Patients", icon: Users },
-              { value: "500+", label: "Certified Doctors", icon: User },
-              { value: "4.9/5", label: "Patient Rating", icon: Star },
-              { value: "24/7", label: "Available Support", icon: Clock },
-            ].map((stat, idx) => (
-              <div key={idx} className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
-                  <stat.icon className="w-7 h-7 text-white" />
-                </div>
-                <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-lg md:text-xl text-teal-100 font-medium">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -221,7 +193,7 @@ const LandingPage = ({ onLoginClick }) => {
                 icon: MessageSquare,
                 title: "Connect with Doctors",
                 description:
-                  "Choose from 500+ verified healthcare professionals. Chat or video call instantly.",
+                  "Choose from 500+ verified healthcare professionals. Chat with doctors instantly.",
                 color: "from-blue-500 to-blue-600",
               },
               {
@@ -280,10 +252,10 @@ const LandingPage = ({ onLoginClick }) => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {[
               {
-                icon: Video,
-                title: "Video Consultations",
+                icon: MessageSquare,
+                title: "Live Chat with Doctors",
                 description:
-                  "See your doctor face-to-face from anywhere. High-quality video calls that work on any device.",
+                  "Connect with your doctor instantly from anywhere. Real-time messaging that works on any device.",
                 color: "bg-blue-500",
                 lightColor: "bg-blue-100",
               },
@@ -360,7 +332,7 @@ const LandingPage = ({ onLoginClick }) => {
           {/* Section Header */}
           <div className="text-center mb-16">
             <span className="inline-block bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 px-4 py-2 rounded-full text-lg font-medium mb-4">
-              About Pulse.ai
+              About PulseConnect
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
               Healthcare Made Human
@@ -375,7 +347,7 @@ const LandingPage = ({ onLoginClick }) => {
           <div className="grid lg:grid-cols-2 gap-8 mb-16">
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 lg:p-10 shadow-lg border border-gray-100 dark:border-gray-700">
               <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6">
-                <Heart className="w-8 h-8 text-white" />
+                <Activity className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Our Mission
@@ -445,7 +417,7 @@ const LandingPage = ({ onLoginClick }) => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-                Why Families Trust Pulse.ai
+                Why Families Trust PulseConnect
               </h3>
               <div className="space-y-6">
                 {[
@@ -515,7 +487,7 @@ const LandingPage = ({ onLoginClick }) => {
                       Email Us
                     </p>
                     <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                      support@pulseai.health
+                      support@pulseconnect.health
                     </p>
                   </div>
                 </div>
@@ -797,6 +769,32 @@ const LandingPage = ({ onLoginClick }) => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Banner */}
+      <section className="bg-gradient-to-r from-teal-600 via-teal-700 to-blue-700 py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {[
+              { value: "50,000+", label: "Active Patients", icon: Users },
+              { value: "500+", label: "Certified Doctors", icon: User },
+              { value: "4.9/5", label: "Patient Rating", icon: Star },
+              { value: "24/7", label: "Available Support", icon: Clock },
+            ].map((stat, idx) => (
+              <div key={idx} className="text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
+                  <stat.icon className="w-7 h-7 text-white" />
+                </div>
+                <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-lg md:text-xl text-teal-100 font-medium">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

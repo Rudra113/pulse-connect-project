@@ -6,6 +6,8 @@
 const express = require('express');
 const router = express.Router();
 const PatientQueue = require('../models/PatientQueue');
+const Chat = require('../models/Chat');
+const Notification = require('../models/Notification');
 const { protect, authorize } = require('../middleware/auth');
 
 /**
@@ -41,6 +43,44 @@ router.get('/', protect, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/queue/completed
+ * @desc    Get completed consultations for the authenticated doctor
+ * @access  Private (Doctors only)
+ */
+router.get('/completed', protect, async (req, res) => {
+    try {
+        // Only doctors can view completed consultations
+        if (req.user.role !== 'doctor' && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only doctors can access completed consultations'
+            });
+        }
+
+        const completed = await PatientQueue.find({
+            doctorId: req.user._id,
+            status: 'completed'
+        })
+            .populate('patientId', 'name email age avatarColor phone')
+            .sort({ consultationEndedAt: -1 })
+            .limit(50); // Limit to most recent 50
+
+        res.status(200).json({
+            success: true,
+            count: completed.length,
+            data: completed
+        });
+    } catch (error) {
+        console.error('Error fetching completed consultations:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching completed consultations',
+            error: error.message
+        });
+    }
+});
+
+/**
  * @route   GET /api/queue/my-consultations
  * @desc    Get patient's own consultation requests
  * @access  Private (Patients)
@@ -49,6 +89,7 @@ router.get('/my-consultations', protect, async (req, res) => {
     try {
         const consultations = await PatientQueue.find({ patientId: req.user._id })
             .populate('doctorId', 'name email specialty avatarColor')
+            .populate('chatId')
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -76,6 +117,7 @@ router.post('/', protect, async (req, res) => {
         const {
             doctorId,
             condition,
+            age,
             symptoms,
             symptomDuration,
             urgency,
@@ -108,6 +150,7 @@ router.post('/', protect, async (req, res) => {
             patientId: req.user._id,
             doctorId,
             condition,
+            age: age || null,
             symptoms: symptoms || '',
             symptomDuration: symptomDuration || '',
             urgency: urgency || 'medium',
@@ -115,8 +158,29 @@ router.post('/', protect, async (req, res) => {
             consultationMode: consultationMode || 'video'
         });
 
+        // Automatically create a chat between patient and doctor for the consultation
+        const chat = await Chat.getOrCreate(req.user._id, doctorId);
+        queueEntry.chatId = chat._id;
+        await queueEntry.save();
+
         await queueEntry.populate('patientId', 'name email age avatarColor phone');
         await queueEntry.populate('doctorId', 'name email specialty avatarColor');
+
+        // Create notification for the doctor about new consultation request
+        await Notification.createNotification({
+            userId: doctorId,
+            title: 'New Consultation Request',
+            message: `${req.user.name} has requested a consultation for: ${condition}`,
+            type: 'consultation_started',
+            relatedId: queueEntry._id,
+            relatedModel: 'PatientQueue',
+            metadata: {
+                patientId: req.user._id,
+                patientName: req.user.name,
+                condition: condition,
+                urgency: urgency || 'medium'
+            }
+        });
 
         res.status(201).json({
             success: true,
@@ -162,6 +226,21 @@ router.put('/:id/start', protect, async (req, res) => {
                 message: 'Queue entry not found or already in consultation'
             });
         }
+
+        // Create notification for the patient
+        await Notification.createNotification({
+            userId: queueEntry.patientId._id,
+            title: 'Consultation Started',
+            message: `Dr. ${req.user.name} has started your consultation. Please join the chat to continue.`,
+            type: 'consultation_started',
+            relatedId: queueEntry.chatId,
+            relatedModel: 'Chat',
+            metadata: {
+                doctorId: req.user._id,
+                doctorName: req.user.name,
+                condition: queueEntry.condition
+            }
+        });
 
         res.status(200).json({
             success: true,
@@ -210,6 +289,21 @@ router.put('/:id/complete', protect, async (req, res) => {
                 message: 'Queue entry not found or not in consultation'
             });
         }
+
+        // Create notification for the patient
+        await Notification.createNotification({
+            userId: queueEntry.patientId._id,
+            title: 'Consultation Completed',
+            message: `Your consultation with Dr. ${req.user.name} has been completed. Check your messages for any prescriptions or notes.`,
+            type: 'consultation_completed',
+            relatedId: queueEntry.chatId,
+            relatedModel: 'Chat',
+            metadata: {
+                doctorId: req.user._id,
+                doctorName: req.user.name,
+                condition: queueEntry.condition
+            }
+        });
 
         res.status(200).json({
             success: true,

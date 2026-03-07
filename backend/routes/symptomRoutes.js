@@ -28,6 +28,8 @@ router.post('/analyze-public', async (req, res) => {
         // Use Gemini AI for analysis (doesn't save to database)
         const analysis = await geminiAnalyze(symptoms);
 
+        console.log('Symptom analysis result:', JSON.stringify(analysis, null, 2));
+
         res.status(200).json({
             success: true,
             message: 'Symptoms analyzed successfully',

@@ -284,4 +284,78 @@ This project is created for educational purposes as part of a college project.
 
 ---
 
+## 🌐 Deployment Guide (Render.com)
+
+### Prerequisites
+1. Push your code to GitHub (without `.env` file!)
+2. Create accounts on:
+   - [Render.com](https://render.com) (free)
+   - [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (already have)
+
+### Step 1: Deploy Backend
+
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click **"New +"** → **"Web Service"**
+3. Connect your GitHub repository
+4. Configure:
+   - **Name:** `medicaltracker-api`
+   - **Root Directory:** `backend`
+   - **Runtime:** `Node`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+5. Add Environment Variables:
+   | Key | Value |
+   |-----|-------|
+   | `NODE_ENV` | `production` |
+   | `MONGODB_URI` | Your MongoDB Atlas URI |
+   | `JWT_SECRET` | Generate a secure random string |
+   | `JWT_EXPIRE` | `7d` |
+   | `FRONTEND_URL` | `https://your-frontend.onrender.com` |
+   | `ALLOWED_ORIGINS` | `https://your-frontend.onrender.com` |
+   | `EMAIL_SERVICE` | `gmail` |
+   | `EMAIL_USER` | Your Gmail address |
+   | `EMAIL_PASS` | Gmail App Password |
+   | `GEMINI_API_KEY` | Your Gemini API key |
+
+6. Click **"Create Web Service"**
+7. Copy the deployed URL (e.g., `https://medicaltracker-api.onrender.com`)
+
+### Step 2: Deploy Frontend
+
+1. In Render Dashboard, click **"New +"** → **"Static Site"**
+2. Connect the same repository
+3. Configure:
+   - **Name:** `medicaltracker-frontend`
+   - **Root Directory:** `frontend`
+   - **Build Command:** `npm install && npm run build`
+   - **Publish Directory:** `build`
+4. Add Environment Variables:
+   | Key | Value |
+   |-----|-------|
+   | `REACT_APP_API_URL` | `https://your-backend.onrender.com/api` |
+
+5. Click **"Create Static Site"**
+
+### Step 3: Update CORS & URLs
+
+After both services are deployed, update:
+1. Backend `ALLOWED_ORIGINS` with your frontend URL
+2. Backend `FRONTEND_URL` with your frontend URL
+
+### Alternative: One-Click Deploy with Blueprint
+
+The project includes a `render.yaml` file. In Render:
+1. Click **"New +"** → **"Blueprint"**
+2. Connect your repo
+3. Render auto-detects `render.yaml` and deploys both services
+
+### Important Notes
+
+- 🆓 Free tier has cold starts (first request may take 30s)
+- 🔒 Never commit `.env` files to Git
+- 📧 For Gmail, create an [App Password](https://support.google.com/accounts/answer/185833)
+- 🔄 Enable "Auto-Deploy" for automatic updates on git push
+
+---
+
 **Built with ❤️ using the MERN Stack**

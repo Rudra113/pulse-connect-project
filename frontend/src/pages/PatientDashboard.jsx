@@ -3,7 +3,7 @@
  * Dashboard for patient users
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Calendar,
   Pill,
@@ -12,7 +12,6 @@ import {
   ChevronRight,
   TrendingUp,
   AlertCircle,
-  Video,
   MessageSquare,
   User,
   Stethoscope,
@@ -22,6 +21,9 @@ import {
   Trash2,
   Check,
   X,
+  RefreshCw,
+  Bell,
+  FileText,
 } from "lucide-react";
 import DashboardHeader from "../components/common/DashboardHeader";
 import {
@@ -30,10 +32,11 @@ import {
   symptomsAPI,
   usersAPI,
   queueAPI,
+  chatsAPI,
 } from "../services/api";
 
 const PatientDashboard = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("medications");
   const [symptomText, setSymptomText] = useState("");
   const [medications, setMedications] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -43,15 +46,32 @@ const PatientDashboard = ({ user, onLogout }) => {
   const [symptomAnalysis, setSymptomAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
 
+  // Chat state
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const shouldScrollToBottom = useRef(true);
+  const previousMessageCount = useRef(0);
+
+  // Notification state
+  const [notification, setNotification] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Consultation booking state
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [consultationForm, setConsultationForm] = useState({
     condition: "",
+    age: "",
     symptoms: "",
     symptomDuration: "",
     urgency: "medium",
     consultationType: "general",
-    consultationMode: "video",
+    consultationMode: "chat",
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -70,7 +90,6 @@ const PatientDashboard = ({ user, onLogout }) => {
   const [medLoading, setMedLoading] = useState(false);
 
   // Section refs for smooth scrolling
-  const overviewRef = useRef(null);
   const consultRef = useRef(null);
   const symptomsRef = useRef(null);
   const medicationsRef = useRef(null);
@@ -78,7 +97,6 @@ const PatientDashboard = ({ user, onLogout }) => {
   const addMedFormRef = useRef(null); // Ref for add medication form
 
   const sectionRefs = {
-    overview: overviewRef,
     consult: consultRef,
     symptoms: symptomsRef,
     medications: medicationsRef,
@@ -119,28 +137,455 @@ const PatientDashboard = ({ user, onLogout }) => {
     fetchData();
   }, []);
 
+  // Auto-refresh data every 15 seconds for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDataSilent();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-refresh messages when in chat view
+  useEffect(() => {
+    let interval;
+    if (activeTab === "messages" && selectedChat) {
+      interval = setInterval(() => {
+        fetchMessages(selectedChat._id, true);
+      }, 5000);
+    }
+    return () => interval && clearInterval(interval);
+  }, [activeTab, selectedChat]);
+
+  // Scroll to bottom only when new messages arrive or user sends a message
+  useEffect(() => {
+    if (messagesEndRef.current && shouldScrollToBottom.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      shouldScrollToBottom.current = false;
+    }
+    // Check if new messages actually arrived during silent refresh
+    if (
+      messages.length > previousMessageCount.current &&
+      previousMessageCount.current > 0
+    ) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    previousMessageCount.current = messages.length;
+  }, [messages]);
+
+  // Show notification helper
+  const showNotification = useCallback((message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  }, []);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [medsRes, apptsRes, doctorsRes, consultRes] = await Promise.all([
-        medicationsAPI.getAll(),
-        appointmentsAPI.getAll({ upcoming: "true" }),
-        usersAPI.getDoctors(),
-        queueAPI.getMyConsultations
-          ? queueAPI.getMyConsultations()
-          : Promise.resolve({ success: true, data: [] }),
-      ]);
+      const [medsRes, apptsRes, doctorsRes, consultRes, chatsRes] =
+        await Promise.all([
+          medicationsAPI.getAll(),
+          appointmentsAPI.getAll({ upcoming: "true" }),
+          usersAPI.getDoctors(),
+          queueAPI.getMyConsultations
+            ? queueAPI.getMyConsultations()
+            : Promise.resolve({ success: true, data: [] }),
+          chatsAPI.getAll(),
+        ]);
 
       if (medsRes.success) setMedications(medsRes.data);
       if (apptsRes.success) setAppointments(apptsRes.data);
       if (doctorsRes.success) setDoctors(doctorsRes.data);
       if (consultRes.success) setMyConsultations(consultRes.data);
+      if (chatsRes.success) setChats(chatsRes.data);
+      setLastRefresh(new Date());
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Silent refresh without showing loading state
+  const fetchDataSilent = async () => {
+    try {
+      const [medsRes, consultRes, chatsRes] = await Promise.all([
+        medicationsAPI.getAll(),
+        queueAPI.getMyConsultations
+          ? queueAPI.getMyConsultations()
+          : Promise.resolve({ success: true, data: [] }),
+        chatsAPI.getAll(),
+      ]);
+
+      if (medsRes.success) setMedications(medsRes.data);
+      if (consultRes.success) {
+        // Check for status changes (doctor started consultation)
+        const prevInProgress = myConsultations.filter(
+          (c) => c.status === "in-consultation",
+        ).length;
+        const newInProgress = consultRes.data.filter(
+          (c) => c.status === "in-consultation",
+        ).length;
+        if (newInProgress > prevInProgress) {
+          showNotification(
+            "🎉 A doctor has started your consultation! Check Messages.",
+            "success",
+          );
+        }
+        setMyConsultations(consultRes.data);
+      }
+      if (chatsRes.success) {
+        // Check for new unread messages
+        const prevUnread = chats.reduce(
+          (sum, c) => sum + (c.unreadCount || 0),
+          0,
+        );
+        const newUnread = chatsRes.data.reduce(
+          (sum, c) => sum + (c.unreadCount || 0),
+          0,
+        );
+        if (newUnread > prevUnread) {
+          showNotification("📬 You have new messages!", "info");
+        }
+        setChats(chatsRes.data);
+        // Update selectedChat with fresh data (for online status updates)
+        if (selectedChat) {
+          const updatedSelectedChat = chatsRes.data.find(
+            (c) => c._id === selectedChat._id,
+          );
+          if (updatedSelectedChat) {
+            setSelectedChat(updatedSelectedChat);
+          }
+        }
+      }
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error("Error in silent refresh:", error);
+    }
+  };
+
+  // Manual refresh
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchDataSilent();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  // Chat functions
+  const fetchMessages = async (chatId, silent = false) => {
+    try {
+      if (!silent) setChatLoading(true);
+      const response = await chatsAPI.getMessages(chatId);
+      if (response.success) {
+        setMessages(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      if (!silent) setChatLoading(false);
+    }
+  };
+
+  const handleSelectChat = async (chat) => {
+    setSelectedChat(chat);
+    shouldScrollToBottom.current = true;
+    previousMessageCount.current = 0;
+    await fetchMessages(chat._id);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedChat || sendingMessage) return;
+
+    try {
+      setSendingMessage(true);
+      const response = await chatsAPI.sendMessage(
+        selectedChat._id,
+        messageInput.trim(),
+      );
+      if (response.success) {
+        shouldScrollToBottom.current = true;
+        setMessages([...messages, response.data]);
+        setMessageInput("");
+        // Update chat list to show latest message
+        const updatedChats = chats.map((c) =>
+          c._id === selectedChat._id
+            ? {
+                ...c,
+                lastMessage: { text: messageInput.trim(), sentAt: new Date() },
+              }
+            : c,
+        );
+        setChats(updatedChats);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      showNotification("Failed to send message", "error");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Start chat with doctor from consultation
+  const handleStartChat = async (doctorId) => {
+    try {
+      setChatLoading(true);
+      const response = await chatsAPI.create(doctorId);
+      if (response.success) {
+        // Refresh chats and switch to messages tab
+        const chatsRes = await chatsAPI.getAll();
+        if (chatsRes.success) {
+          setChats(chatsRes.data);
+          const newChat = chatsRes.data.find(
+            (c) => c.participant?._id === doctorId,
+          );
+          if (newChat) {
+            setSelectedChat(newChat);
+            await fetchMessages(newChat._id);
+          }
+        }
+        setActiveTab("messages");
+        showNotification(
+          "Chat started! You can now message your doctor.",
+          "success",
+        );
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      showNotification("Failed to start chat", "error");
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // Helper function to check if message is a prescription
+  const isPrescription = (text) => {
+    return (
+      text?.includes("[PRESCRIPTION]") && text?.includes("[/PRESCRIPTION]")
+    );
+  };
+
+  // Helper function to parse prescription data
+  const parsePrescription = (text) => {
+    const match = text.match(/\[PRESCRIPTION\]([\s\S]*?)\[\/PRESCRIPTION\]/);
+    if (!match) return null;
+
+    const content = match[1];
+    const data = {};
+    const lines = content.trim().split("\n");
+    lines.forEach((line) => {
+      const [key, ...valueParts] = line.split(":");
+      if (key && valueParts.length) {
+        data[key.trim()] = valueParts.join(":").trim();
+      }
+    });
+    return data;
+  };
+
+  // Add medication from prescription
+  const [addingFromPrescription, setAddingFromPrescription] = useState(null);
+  const [addedPrescriptions, setAddedPrescriptions] = useState(new Set());
+
+  const handleAddMedicationFromPrescription = async (
+    prescriptionData,
+    messageId,
+  ) => {
+    if (!prescriptionData.medication) return;
+
+    try {
+      setAddingFromPrescription(messageId);
+
+      // Parse frequency to get daily dosage (pills per day)
+      // e.g., "twice daily" = 2, "3 times a day" = 3, "once daily" = 1
+      let dailyDosage = 1;
+      const freq = (prescriptionData.frequency || "").toLowerCase();
+      if (
+        freq.includes("once") ||
+        freq.includes("1x") ||
+        freq.includes("1 time")
+      ) {
+        dailyDosage = 1;
+      } else if (
+        freq.includes("twice") ||
+        freq.includes("2x") ||
+        freq.includes("2 time")
+      ) {
+        dailyDosage = 2;
+      } else if (
+        freq.includes("three") ||
+        freq.includes("3x") ||
+        freq.includes("3 time")
+      ) {
+        dailyDosage = 3;
+      } else if (
+        freq.includes("four") ||
+        freq.includes("4x") ||
+        freq.includes("4 time")
+      ) {
+        dailyDosage = 4;
+      } else {
+        const freqMatch = freq.match(/(\d+)/);
+        if (freqMatch) dailyDosage = parseInt(freqMatch[1]) || 1;
+      }
+
+      // Parse duration to get number of days
+      const durationMatch = prescriptionData.duration?.match(/(\d+)/);
+      const durationDays = durationMatch ? parseInt(durationMatch[1]) : 30;
+      const totalQuantity = dailyDosage * durationDays;
+
+      const medicationData = {
+        medicineName: prescriptionData.medication,
+        dailyDosage: dailyDosage,
+        totalQuantity: totalQuantity,
+        remainingStock: totalQuantity,
+        refillThreshold: Math.max(5, Math.floor(totalQuantity * 0.2)),
+        notes: `Dosage: ${prescriptionData.dosage || "N/A"} | Frequency: ${prescriptionData.frequency || "N/A"} | Duration: ${prescriptionData.duration || "N/A"}`,
+      };
+
+      const response = await medicationsAPI.create(medicationData);
+      if (response.success) {
+        setMedications([...medications, response.data]);
+        setAddedPrescriptions((prev) => new Set([...prev, messageId]));
+        showNotification("Medication added to your tracker!", "success");
+      }
+    } catch (error) {
+      console.error("Error adding medication from prescription:", error);
+      showNotification(
+        error.response?.data?.message || "Failed to add medication",
+        "error",
+      );
+    } finally {
+      setAddingFromPrescription(null);
+    }
+  };
+
+  // Render prescription card
+  const renderPrescriptionCard = (
+    prescriptionData,
+    isOwn,
+    timestamp,
+    messageId,
+  ) => (
+    <div className={`max-w-sm ${isOwn ? "ml-auto" : "mr-auto"}`}>
+      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-2xl border-2 border-emerald-200 dark:border-emerald-700 shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="text-white font-bold text-sm">
+                Medical Prescription
+              </h4>
+              <p className="text-emerald-100 text-xs">From your doctor</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">💊</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
+                Medication
+              </p>
+              <p className="font-bold text-gray-900 dark:text-white text-lg">
+                {prescriptionData.medication || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-emerald-200 dark:border-emerald-700">
+            <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Dosage
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                {prescriptionData.dosage || "N/A"}
+              </p>
+            </div>
+            <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Frequency
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                {prescriptionData.frequency || "N/A"}
+              </p>
+            </div>
+            <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Duration
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                {prescriptionData.duration || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          {/* Add to Medications Button - only for received prescriptions */}
+          {!isOwn &&
+            (addedPrescriptions.has(messageId) ? (
+              <div className="w-full mt-2 flex items-center justify-center space-x-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium py-2.5 px-4 rounded-xl border-2 border-green-300 dark:border-green-700">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Added to Medications</span>
+              </div>
+            ) : (
+              <button
+                onClick={() =>
+                  handleAddMedicationFromPrescription(
+                    prescriptionData,
+                    messageId,
+                  )
+                }
+                disabled={addingFromPrescription === messageId}
+                className="w-full mt-2 flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              >
+                {addingFromPrescription === messageId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add to My Medications</span>
+                  </>
+                )}
+              </button>
+            ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2 bg-emerald-100/50 dark:bg-emerald-900/20 border-t border-emerald-200 dark:border-emerald-700">
+          <p className="text-xs text-emerald-700 dark:text-emerald-300 text-right">
+            {new Date(timestamp).toLocaleString([], {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const totalUnread = chats.reduce(
+    (sum, chat) => sum + (chat.unreadCount || 0),
+    0,
+  );
 
   const handleBookConsultation = async () => {
     if (!selectedDoctor || !consultationForm.condition.trim()) return;
@@ -154,22 +599,30 @@ const PatientDashboard = ({ user, onLogout }) => {
 
       if (response.success) {
         setBookingSuccess(true);
+        showNotification(
+          "✅ Consultation booked! A chat has been created with your doctor.",
+          "success",
+        );
         setConsultationForm({
           condition: "",
+          age: "",
           symptoms: "",
           symptomDuration: "",
           urgency: "medium",
           consultationType: "general",
-          consultationMode: "video",
+          consultationMode: "chat",
         });
         setSelectedDoctor(null);
-        fetchData();
+        await fetchData(); // Refresh all data including chats
 
         setTimeout(() => setBookingSuccess(false), 3000);
       }
     } catch (error) {
       console.error("Error booking consultation:", error);
-      alert(error.response?.data?.message || "Failed to book consultation");
+      showNotification(
+        error.response?.data?.message || "Failed to book consultation",
+        "error",
+      );
     } finally {
       setBookingLoading(false);
     }
@@ -293,14 +746,31 @@ const PatientDashboard = ({ user, onLogout }) => {
       <DashboardHeader user={user} onLogout={onLogout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back, {user?.name?.split(" ")[0] || "Patient"}!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Here's your health overview for today.
-          </p>
+        {/* Welcome Section with Refresh */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Welcome back, {user?.name?.split(" ")[0] || "Patient"}!
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Here's your health overview for today.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Last updated: {lastRefresh.toLocaleTimeString()}
+            </span>
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCw
+                className={`w-5 h-5 text-teal-600 dark:text-teal-400 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
         </div>
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -360,9 +830,14 @@ const PatientDashboard = ({ user, onLogout }) => {
         <div className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 py-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: "overview", label: "Overview", icon: Activity },
               { id: "medications", label: "My Medications", icon: Pill },
               { id: "consult", label: "Book Consultation", icon: Stethoscope },
+              {
+                id: "messages",
+                label: "Messages",
+                icon: MessageSquare,
+                badge: totalUnread,
+              },
               { id: "symptoms", label: "Symptoms", icon: AlertCircle },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -378,6 +853,17 @@ const PatientDashboard = ({ user, onLogout }) => {
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
+                  {tab.badge > 0 && (
+                    <span
+                      className={`ml-1 px-2 py-0.5 text-xs font-bold rounded-full ${
+                        activeTab === tab.id
+                          ? "bg-white text-teal-600"
+                          : "bg-rose-500 text-white"
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -385,110 +871,6 @@ const PatientDashboard = ({ user, onLogout }) => {
         </div>
         {/* Tab Content Container */}
         <div ref={contentRef} className="mt-2">
-          {/* Overview Tab */}
-          {activeTab === "overview" && (
-            <div ref={overviewRef} className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md dark:shadow-gray-900/30">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    My Medications
-                  </h2>
-                  <button
-                    onClick={() => handleTabClick("medications")}
-                    className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium text-sm flex items-center"
-                  >
-                    View All <ChevronRight className="w-4 h-4 ml-1" />
-                  </button>
-                </div>
-
-                {loading ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    Loading medications...
-                  </div>
-                ) : medications.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <Pill className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
-                    <p>No medications added yet</p>
-                    <button
-                      onClick={() => {
-                        handleTabClick("medications");
-                        setTimeout(() => setShowAddMedForm(true), 300);
-                      }}
-                      className="mt-3 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
-                    >
-                      + Add Your First Medication
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {medications.slice(0, 4).map((med) => {
-                      const stockPercent =
-                        (med.remainingStock / med.totalQuantity) * 100;
-                      const isLow = med.needsRefill;
-
-                      return (
-                        <div
-                          key={med._id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-teal-300 dark:hover:border-teal-600 transition bg-white dark:bg-gray-800"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {med.medicineName}
-                              </h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {med.dailyDosage}x daily
-                              </p>
-                            </div>
-                            <div
-                              className={`px-3 py-1.5 rounded-full text-sm font-bold ${
-                                isLow
-                                  ? "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 border-2 border-red-300 dark:border-red-700"
-                                  : "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border-2 border-emerald-300 dark:border-emerald-700"
-                              }`}
-                            >
-                              {med.remainingStock} left
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Stock Level
-                              </span>
-                              <span
-                                className={`text-lg font-bold ${isLow ? "text-red-600" : "text-emerald-600"}`}
-                              >
-                                {med.remainingStock} / {med.totalQuantity}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  isLow
-                                    ? "bg-gradient-to-r from-red-600 to-orange-500"
-                                    : "bg-gradient-to-r from-emerald-500 to-green-400"
-                                }`}
-                                style={{
-                                  width: `${Math.min(stockPercent, 100)}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <div className="flex items-center space-x-2 text-sm text-gray-600">
-                              <Clock className="w-3 h-3" />
-                              <span className="font-medium">
-                                {med.daysRemaining} days remaining
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Medications Tab - Full Medicine Tracker */}
           {activeTab === "medications" && (
             <div ref={medicationsRef} className="space-y-6 scroll-mt-6">
@@ -965,7 +1347,7 @@ const PatientDashboard = ({ user, onLogout }) => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Main Concern / Condition *
                       </label>
@@ -979,6 +1361,26 @@ const PatientDashboard = ({ user, onLogout }) => {
                           })
                         }
                         placeholder="e.g., Persistent headache, Skin rash, Fever"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Age *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="150"
+                        value={consultationForm.age}
+                        onChange={(e) =>
+                          setConsultationForm({
+                            ...consultationForm,
+                            age: e.target.value,
+                          })
+                        }
+                        placeholder="Enter your age"
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
                       />
                     </div>
@@ -1075,32 +1477,13 @@ const PatientDashboard = ({ user, onLogout }) => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Preferred Mode
+                        Consultation Mode
                       </label>
                       <div className="flex space-x-3">
-                        {[
-                          { value: "video", icon: Video, label: "Video" },
-                          { value: "chat", icon: MessageSquare, label: "Chat" },
-                        ].map((mode) => (
-                          <button
-                            key={mode.value}
-                            type="button"
-                            onClick={() =>
-                              setConsultationForm({
-                                ...consultationForm,
-                                consultationMode: mode.value,
-                              })
-                            }
-                            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl border-2 transition ${
-                              consultationForm.consultationMode === mode.value
-                                ? "border-teal-500 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
-                                : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-teal-300 dark:hover:border-teal-600"
-                            }`}
-                          >
-                            <mode.icon className="w-5 h-5" />
-                            <span>{mode.label}</span>
-                          </button>
-                        ))}
+                        <div className="flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300">
+                          <MessageSquare className="w-5 h-5" />
+                          <span>Live Chat</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1200,17 +1583,12 @@ const PatientDashboard = ({ user, onLogout }) => {
                                     consultation.status?.slice(1)}
                             </span>
                             <div className="flex items-center space-x-2">
-                              {consultation.consultationMode === "video" && (
-                                <button
-                                  className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/50 transition"
-                                  title="Video Call"
-                                >
-                                  <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                </button>
-                              )}
                               <button
+                                onClick={() =>
+                                  handleStartChat(consultation.doctorId?._id)
+                                }
                                 className="p-2.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-800/50 transition"
-                                title="Chat"
+                                title="Chat with Doctor"
                               >
                                 <MessageSquare className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                               </button>
@@ -1233,12 +1611,16 @@ const PatientDashboard = ({ user, onLogout }) => {
                               })}
                             </span>
                           </div>
-                          {consultation.status === "in-consultation" &&
-                            consultation.consultationMode === "video" && (
-                              <button className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2.5 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition font-semibold shadow-md">
-                                Join Call
-                              </button>
-                            )}
+                          {consultation.status === "in-consultation" && (
+                            <button
+                              onClick={() =>
+                                handleStartChat(consultation.doctorId?._id)
+                              }
+                              className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2.5 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition font-semibold shadow-md"
+                            >
+                              Start Chat
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1274,17 +1656,12 @@ const PatientDashboard = ({ user, onLogout }) => {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            {appointment.type === "video" && (
-                              <button
-                                className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/50 transition"
-                                title="Video Call"
-                              >
-                                <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                              </button>
-                            )}
                             <button
+                              onClick={() =>
+                                handleStartChat(appointment.doctorId?._id)
+                              }
                               className="p-2.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-800/50 transition"
-                              title="Chat"
+                              title="Chat with Doctor"
                             >
                               <MessageSquare className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                             </button>
@@ -1306,14 +1683,271 @@ const PatientDashboard = ({ user, onLogout }) => {
                               })}
                             </span>
                           </div>
-                          {appointment.type === "video" && (
-                            <button className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2.5 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition font-semibold shadow-md">
-                              Join Call
-                            </button>
-                          )}
+                          <button
+                            onClick={() =>
+                              handleStartChat(appointment.doctorId?._id)
+                            }
+                            className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2.5 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition font-semibold shadow-md"
+                          >
+                            Start Chat
+                          </button>
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Messages Tab */}
+          {activeTab === "messages" && (
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Chat List */}
+              <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
+                    <MessageSquare className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
+                    Your Conversations
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
+                  {chats.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
+                      <p className="font-medium">No conversations yet</p>
+                      <p className="text-sm mt-2">
+                        Book a consultation to start chatting with a doctor
+                      </p>
+                      <button
+                        onClick={() => setActiveTab("consult")}
+                        className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm"
+                      >
+                        Book Consultation
+                      </button>
+                    </div>
+                  ) : (
+                    chats.map((chat) => (
+                      <button
+                        key={chat._id}
+                        onClick={() => handleSelectChat(chat)}
+                        className={`w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                          selectedChat?._id === chat._id
+                            ? "bg-teal-50 dark:bg-teal-900/30 border-l-4 border-teal-500"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold relative"
+                            style={{
+                              backgroundColor:
+                                chat.participant?.avatarColor || "#3B82F6",
+                            }}
+                          >
+                            {chat.participant?.name?.charAt(0).toUpperCase() ||
+                              "D"}
+                            {/* Online/Offline indicator */}
+                            <span
+                              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 ${
+                                chat.participant?.isOnline
+                                  ? "bg-green-500"
+                                  : "bg-gray-400"
+                              }`}
+                            ></span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-gray-900 dark:text-white truncate">
+                                Dr. {chat.participant?.name}
+                              </span>
+                              {chat.unreadCount > 0 && (
+                                <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {chat.lastMessage?.text || "No messages yet"}
+                            </p>
+                            <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                              {chat.participant?.specialty ||
+                                "General Physician"}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Window */}
+              <div
+                className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 flex flex-col"
+                style={{ height: "600px" }}
+              >
+                {selectedChat ? (
+                  <>
+                    {/* Chat Header */}
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                          style={{
+                            backgroundColor:
+                              selectedChat.participant?.avatarColor ||
+                              "#3B82F6",
+                          }}
+                        >
+                          {selectedChat.participant?.name
+                            ?.charAt(0)
+                            .toUpperCase() || "D"}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            Dr. {selectedChat.participant?.name}
+                          </h3>
+                          <p className="text-sm text-teal-600 dark:text-teal-400">
+                            {selectedChat.participant?.specialty ||
+                              "General Physician"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`flex items-center text-xs ${
+                            selectedChat.participant?.isOnline
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full mr-1 ${
+                              selectedChat.participant?.isOnline
+                                ? "bg-green-500 animate-pulse"
+                                : "bg-gray-400"
+                            }`}
+                          ></span>
+                          {selectedChat.participant?.isOnline
+                            ? "Online"
+                            : "Offline"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+                      {chatLoading ? (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                          <MessageSquare className="w-12 h-12 mb-3 text-gray-400" />
+                          <p className="font-medium">No messages yet</p>
+                          <p className="text-sm">
+                            Send a message to start the conversation
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {messages.map((msg) => {
+                            const isOwn = msg.senderId?._id === user?._id;
+
+                            // Check if this is a prescription message
+                            if (isPrescription(msg.text)) {
+                              const prescriptionData = parsePrescription(
+                                msg.text,
+                              );
+                              return (
+                                <div
+                                  key={msg._id}
+                                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                                >
+                                  {renderPrescriptionCard(
+                                    prescriptionData,
+                                    isOwn,
+                                    msg.createdAt,
+                                    msg._id,
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            // Regular message
+                            return (
+                              <div
+                                key={msg._id}
+                                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                              >
+                                <div
+                                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                                    isOwn
+                                      ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white"
+                                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700"
+                                  }`}
+                                >
+                                  <p className="text-sm">{msg.text}</p>
+                                  <p
+                                    className={`text-xs mt-1 ${
+                                      isOwn
+                                        ? "text-teal-100"
+                                        : "text-gray-500 dark:text-gray-400"
+                                    }`}
+                                  >
+                                    {new Date(msg.createdAt).toLocaleTimeString(
+                                      [],
+                                      { hour: "2-digit", minute: "2-digit" },
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div ref={messagesEndRef} />
+                        </>
+                      )}
+                    </div>
+
+                    {/* Message Input */}
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={messageInput}
+                          onChange={(e) => setMessageInput(e.target.value)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && handleSendMessage()
+                          }
+                          placeholder="Type your message..."
+                          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                        <button
+                          onClick={handleSendMessage}
+                          disabled={sendingMessage || !messageInput.trim()}
+                          className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-3 rounded-xl hover:from-teal-700 hover:to-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {sendingMessage ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Send className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    <div className="text-center">
+                      <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Select a conversation
+                      </h3>
+                      <p className="text-sm">
+                        Choose a doctor from the list to view messages
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

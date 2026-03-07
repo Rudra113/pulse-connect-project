@@ -39,7 +39,8 @@ router.post('/', protect, async (req, res) => {
             dailyDosage,
             startDate: startDate || new Date(), // Default to today if not provided
             refillThreshold: refillThreshold || 5, // Default threshold
-            initialRemainingStock
+            initialRemainingStock,
+            notes: notes || ''
         });
 
         // Save to database
@@ -96,6 +97,7 @@ router.get('/', protect, async (req, res) => {
                 refillThreshold: med.refillThreshold,
                 isActive: med.isActive,
                 createdAt: med.createdAt,
+                notes: med.notes || '',
                 // Appended calculated fields
                 remainingStock: stockInfo.remainingStock,
                 daysElapsed: stockInfo.daysElapsed,
@@ -185,6 +187,7 @@ router.put('/:id', protect, async (req, res) => {
         if (totalQuantity) medication.totalQuantity = totalQuantity;
         if (dailyDosage) medication.dailyDosage = dailyDosage;
         if (refillThreshold) medication.refillThreshold = refillThreshold;
+        if (notes !== undefined) medication.notes = notes;
 
         // If remainingStock is provided, calculate and set initialRemainingStock
         if (remainingStock !== undefined) {

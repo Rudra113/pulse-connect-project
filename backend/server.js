@@ -19,6 +19,7 @@ const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const symptomRoutes = require('./routes/symptomRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { initCronJob, checkMedicationsAndAlert } = require('./jobs/cronJob');
 
 // Initialize Express app
@@ -28,9 +29,13 @@ const app = express();
 // MIDDLEWARE CONFIGURATION
 // ===========================================
 
-// Enable CORS for cross-origin requests (frontend on different port)
+// Enable CORS for cross-origin requests
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:3001'];
+
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // React app ports
+    origin: allowedOrigins,
     credentials: true
 }));
 
@@ -86,6 +91,9 @@ app.use('/api/users', userRoutes);
 
 // Admin routes (doctor approval, user management)
 app.use('/api/admin', adminRoutes);
+
+// Notification routes
+app.use('/api/notifications', notificationRoutes);
 
 // Test endpoint to manually trigger the cron job (for development)
 app.get('/api/test-cron', async (req, res) => {

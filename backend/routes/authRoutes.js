@@ -5,12 +5,14 @@
 
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
 
 /**
  * @route   POST /api/auth/register
- * @desc    Register a new user
+ * @desc    Register a new user and send verification email
  * @access  Public
  */
 router.post('/register', async (req, res) => {
@@ -90,13 +92,29 @@ router.post('/register', async (req, res) => {
 
         const user = await User.create(userData);
 
-        // Generate token
+        // Generate email verification token
+        const verificationToken = user.generateEmailVerificationToken();
+        await user.save({ validateBeforeSave: false });
+
+        // Send verification email
+        try {
+            await sendVerificationEmail(user, verificationToken);
+            console.log(`📧 Verification email sent to ${user.email}`);
+        } catch (emailError) {
+            console.error('Error sending verification email:', emailError);
+            // Don't fail registration if email fails, user can resend later
+        }
+
+        // Generate auth token
         const token = user.generateAuthToken();
 
         // Send response (exclude password)
         res.status(201).json({
             success: true,
-            message: user.role === 'doctor' ? 'Registration successful. Your account is pending admin approval.' : 'Registration successful',
+            message: user.role === 'doctor'
+                ? 'Registration successful. Please verify your email. Your account is also pending admin approval.'
+                : 'Registration successful. Please check your email to verify your account.',
+            requiresEmailVerification: true,
             data: {
                 user: {
                     _id: user._id,
@@ -107,6 +125,7 @@ router.post('/register', async (req, res) => {
                     age: user.age,
                     avatarColor: user.avatarColor,
                     isApproved: user.isApproved,
+                    isEmailVerified: user.isEmailVerified,
                     status: user.status,
                     createdAt: user.createdAt
                 },
@@ -154,13 +173,18 @@ router.post('/login', async (req, res) => {
         // Find user by credentials
         const user = await User.findByCredentials(email.toLowerCase(), password);
 
+        // Update online status
+        user.isOnline = true;
+        user.lastSeen = new Date();
+        await user.save({ validateBeforeSave: false });
+
         // Generate token
         const token = user.generateAuthToken();
 
         // Send response
         res.status(200).json({
             success: true,
-            message: 'Login successful',
+            message: user.isEmailVerified ? 'Login successful' : 'Login successful. Please verify your email for full access.',
             data: {
                 user: {
                     _id: user._id,
@@ -171,10 +195,13 @@ router.post('/login', async (req, res) => {
                     age: user.age,
                     avatarColor: user.avatarColor,
                     isApproved: user.isApproved,
+                    isEmailVerified: user.isEmailVerified,
                     status: user.status,
                     qualifications: user.qualifications,
                     experience: user.experience,
-                    createdAt: user.createdAt
+                    createdAt: user.createdAt,
+                    isOnline: user.isOnline,
+                    lastSeen: user.lastSeen
                 },
                 token
             }
@@ -190,6 +217,32 @@ router.post('/login', async (req, res) => {
 });
 
 /**
+ * @route   POST /api/auth/logout
+ * @desc    Logout user and set offline status
+ * @access  Private (requires token)
+ */
+router.post('/logout', protect, async (req, res) => {
+    try {
+        // Update user's online status
+        await User.findByIdAndUpdate(req.user._id, {
+            isOnline: false,
+            lastSeen: new Date()
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error logging out'
+        });
+    }
+});
+
+/**
  * @route   GET /api/auth/me
  * @desc    Get current logged-in user profile
  * @access  Private (requires token)
@@ -197,7 +250,12 @@ router.post('/login', async (req, res) => {
 router.get('/me', protect, async (req, res) => {
     try {
         // req.user is set by the protect middleware
-        const user = await User.findById(req.user._id);
+        // Also update online status when checking profile (heartbeat)
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { isOnline: true, lastSeen: new Date() },
+            { new: true }
+        );
 
         res.status(200).json({
             success: true,
@@ -213,7 +271,9 @@ router.get('/me', protect, async (req, res) => {
                 status: user.status,
                 qualifications: user.qualifications,
                 experience: user.experience,
-                createdAt: user.createdAt
+                createdAt: user.createdAt,
+                isOnline: user.isOnline,
+                lastSeen: user.lastSeen
             }
         });
 
@@ -327,6 +387,281 @@ router.put('/password', protect, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error changing password'
+        });
+    }
+});
+
+/**
+ * @route   GET /api/auth/verify-email/:token
+ * @desc    Verify user's email address
+ * @access  Public
+ */
+router.get('/verify-email/:token', async (req, res) => {
+    try {
+        // Hash the token from URL to compare with stored hash
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        // Find user with matching token that hasn't expired
+        const user = await User.findOne({
+            emailVerificationToken: hashedToken,
+            emailVerificationExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired verification token. Please request a new verification email.'
+            });
+        }
+
+        // Mark email as verified and clear token
+        user.isEmailVerified = true;
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        // Send welcome email
+        try {
+            await sendWelcomeEmail(user);
+        } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Email verified successfully! You can now log in.'
+        });
+
+    } catch (error) {
+        console.error('Email verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error verifying email'
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend email verification link
+ * @access  Public
+ */
+router.post('/resend-verification', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide your email address'
+            });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            // Don't reveal if user exists
+            return res.status(200).json({
+                success: true,
+                message: 'If an account with that email exists, a verification link has been sent.'
+            });
+        }
+
+        if (user.isEmailVerified) {
+            return res.status(400).json({
+                success: false,
+                message: 'This email is already verified. You can log in.'
+            });
+        }
+
+        // Generate new verification token
+        const verificationToken = user.generateEmailVerificationToken();
+        await user.save({ validateBeforeSave: false });
+
+        // Send verification email
+        await sendVerificationEmail(user, verificationToken);
+
+        res.status(200).json({
+            success: true,
+            message: 'Verification email sent. Please check your inbox.'
+        });
+
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending verification email'
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Send password reset email
+ * @access  Public
+ */
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide your email address'
+            });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            // Don't reveal if user exists - security best practice
+            return res.status(200).json({
+                success: true,
+                message: 'If an account with that email exists, a password reset link has been sent.'
+            });
+        }
+
+        // Generate password reset token
+        const resetToken = user.generatePasswordResetToken();
+        await user.save({ validateBeforeSave: false });
+
+        // Send password reset email
+        try {
+            await sendPasswordResetEmail(user, resetToken);
+            console.log(`📧 Password reset email sent to ${user.email}`);
+
+            res.status(200).json({
+                success: true,
+                message: 'Password reset link sent to your email. Please check your inbox.'
+            });
+        } catch (emailError) {
+            // If email fails, clear the reset token
+            user.passwordResetToken = undefined;
+            user.passwordResetExpires = undefined;
+            await user.save({ validateBeforeSave: false });
+
+            console.error('Error sending password reset email:', emailError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error sending password reset email. Please try again later.'
+            });
+        }
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error processing password reset request'
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/reset-password/:token
+ * @desc    Reset password using token
+ * @access  Public
+ */
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a new password'
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        // Hash the token from URL to compare with stored hash
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        // Find user with matching token that hasn't expired
+        const user = await User.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token. Please request a new password reset.'
+            });
+        }
+
+        // Update password and clear reset token
+        user.password = password;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        // Generate new auth token
+        const token = user.generateAuthToken();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset successful! You can now log in with your new password.',
+            data: { token }
+        });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error resetting password'
+        });
+    }
+});
+
+/**
+ * @route   GET /api/auth/verify-reset-token/:token
+ * @desc    Verify if reset token is still valid
+ * @access  Public
+ */
+router.get('/verify-reset-token/:token', async (req, res) => {
+    try {
+        // Hash the token from URL to compare with stored hash
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        // Find user with matching token that hasn't expired
+        const user = await User.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Token is valid',
+            data: { email: user.email }
+        });
+
+    } catch (error) {
+        console.error('Verify reset token error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error verifying reset token'
         });
     }
 });

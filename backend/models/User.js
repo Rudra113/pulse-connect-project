@@ -7,6 +7,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Define the User Schema
 const userSchema = new mongoose.Schema({
@@ -35,6 +36,36 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters'],
         select: false // Don't include password in queries by default
+    },
+
+    // Email verification status
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    // Email verification token (hashed)
+    emailVerificationToken: {
+        type: String,
+        select: false
+    },
+
+    // Email verification token expiry
+    emailVerificationExpires: {
+        type: Date,
+        select: false
+    },
+
+    // Password reset token (hashed)
+    passwordResetToken: {
+        type: String,
+        select: false
+    },
+
+    // Password reset token expiry
+    passwordResetExpires: {
+        type: Date,
+        select: false
     },
 
     // User's avatar/profile color (for UI personalization)
@@ -130,6 +161,18 @@ const userSchema = new mongoose.Schema({
     rejectionReason: {
         type: String,
         default: null
+    },
+
+    // Online status tracking
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+
+    // Last seen timestamp
+    lastSeen: {
+        type: Date,
+        default: null
     }
 }, {
     // Automatically add createdAt and updatedAt timestamps
@@ -181,6 +224,48 @@ userSchema.methods.generateAuthToken = function () {
         process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
         { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
+};
+
+/**
+ * Method to generate email verification token
+ * Creates a random token, hashes it, and stores the hash in DB
+ * @returns {string} - The unhashed token to send to user
+ */
+userSchema.methods.generateEmailVerificationToken = function () {
+    // Generate random token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash and store the token
+    this.emailVerificationToken = crypto
+        .createHash('sha256')
+        .update(verificationToken)
+        .digest('hex');
+
+    // Set expiry to 24 hours from now
+    this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+    return verificationToken;
+};
+
+/**
+ * Method to generate password reset token
+ * Creates a random token, hashes it, and stores the hash in DB
+ * @returns {string} - The unhashed token to send to user
+ */
+userSchema.methods.generatePasswordResetToken = function () {
+    // Generate random token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash and store the token
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // Set expiry to 1 hour from now
+    this.passwordResetExpires = Date.now() + 60 * 60 * 1000;
+
+    return resetToken;
 };
 
 /**
