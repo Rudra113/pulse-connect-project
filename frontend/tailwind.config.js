@@ -6,6 +6,14 @@ module.exports = {
     ],
     darkMode: 'class',
     theme: {
+        screens: {
+            'xs': '475px',
+            'sm': '640px',
+            'md': '768px',
+            'lg': '1024px',
+            'xl': '1280px',
+            '2xl': '1536px',
+        },
         extend: {
             // Custom colors for the medication tracker
             colors: {
@@ -36,6 +44,13 @@ module.exports = {
                     DEFAULT: '#10b981',
                     dark: '#059669',
                 }
+            },
+            // Safe-area spacing for devices with notches
+            spacing: {
+                'safe-top': 'env(safe-area-inset-top)',
+                'safe-bottom': 'env(safe-area-inset-bottom)',
+                'safe-left': 'env(safe-area-inset-left)',
+                'safe-right': 'env(safe-area-inset-right)',
             }
         },
     },

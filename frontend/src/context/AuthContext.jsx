@@ -41,10 +41,10 @@ export const AuthProvider = ({ children }) => {
   const setAuthToken = (token) => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      localStorage.setItem("medtracker_token", token);
+      localStorage.setItem("pulseconnect_token", token);
     } else {
       delete axios.defaults.headers.common["Authorization"];
-      localStorage.removeItem("medtracker_token");
+      localStorage.removeItem("pulseconnect_token");
     }
   };
 

@@ -63,8 +63,6 @@ Respond ONLY with the JSON object, no other text.`;
         const response = await result.response;
         const text = response.text();
 
-        console.log('Raw Gemini response:', text);
-
         // Parse the JSON response
         let analysis;
         try {

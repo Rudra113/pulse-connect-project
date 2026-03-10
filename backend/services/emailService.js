@@ -328,8 +328,71 @@ const sendWelcomeEmail = async (user) => {
     return result;
 };
 
+/**
+ * Send refill alert email
+ * Called by the nightly cron job when a medication is running low
+ * @param {Object} user - User document with name and email
+ * @param {Array} medications - Array of [{medicineName, remainingStock, daysRemaining}]
+ */
+const sendRefillAlertEmail = async (user, medications) => {
+    const transporter = createTransporter();
+
+    const medListHtml = medications.map(med => `
+        <li style="margin: 10px 0;">
+            <strong>${med.medicineName}</strong>:
+            <span style="color: ${med.remainingStock <= 3 ? '#e74c3c' : '#f39c12'}">
+                ${med.remainingStock} pills left
+            </span>
+            (${med.daysRemaining} days remaining)
+        </li>
+    `).join('');
+
+    const medListText = medications.map(med =>
+        `- ${med.medicineName}: ${med.remainingStock} pills left (${med.daysRemaining} days remaining)`
+    ).join('\n');
+
+    const mailOptions = {
+        from: `"PulseConnect Alerts" <${process.env.EMAIL_FROM || 'alerts@pulseconnect.health'}>`,
+        to: user.email,
+        subject: '⚠️ Medication Refill Reminder - PulseConnect',
+        text: `Hello ${user.name},\n\nThe following medications are running low and need a refill:\n\n${medListText}\n\nPlease contact your pharmacy or healthcare provider.\n\nStay healthy!\n- PulseConnect Team`,
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+                <div style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">⚡ PulseConnect</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your Health, Connected</p>
+                </div>
+                <div style="background: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h2 style="color: #e74c3c; margin: 0 0 20px 0;">⚠️ Medication Refill Reminder</h2>
+                    <p style="color: #4b5563;">Hello <strong>${user.name}</strong>,</p>
+                    <p style="color: #4b5563;">The following medications are running low and need a refill:</p>
+                    <ul style="background: #f8f9fa; padding: 20px 20px 20px 40px; border-radius: 8px;">
+                        ${medListHtml}
+                    </ul>
+                    <p style="color: #4b5563;">Please contact your pharmacy or healthcare provider to arrange a refill.</p>
+                    <p style="color: #666;">Stay healthy!<br>- PulseConnect Team</p>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+                    <p style="margin: 0;">© ${new Date().getFullYear()} PulseConnect. All rights reserved.</p>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`📧 Refill alert sent to ${user.email}`);
+        if (process.env.EMAIL_HOST === 'smtp.ethereal.email' || !process.env.EMAIL_HOST) {
+            console.log('   Preview URL:', require('nodemailer').getTestMessageUrl(info));
+        }
+    } catch (error) {
+        console.error(`❌ Failed to send refill alert to ${user.email}:`, error.message);
+    }
+};
+
 module.exports = {
     sendVerificationEmail,
     sendPasswordResetEmail,
-    sendWelcomeEmail
+    sendWelcomeEmail,
+    sendRefillAlertEmail
 };

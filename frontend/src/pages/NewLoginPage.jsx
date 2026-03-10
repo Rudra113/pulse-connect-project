@@ -26,7 +26,6 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -62,10 +61,10 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
     <div className="min-h-screen flex bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Left Side - Image/Brand */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 dark:from-teal-700 dark:to-blue-800 p-12 flex-col justify-between">
-        <div className="flex items-center space-x-2 text-white">
+        <a href="/" className="flex items-center space-x-2 text-white hover:opacity-80 transition-opacity">
           <Activity className="w-10 h-10" />
           <span className="text-3xl font-bold">PulseConnect</span>
-        </div>
+        </a>
         <div className="text-white">
           <h2 className="text-4xl font-bold mb-4">Welcome back!</h2>
           <p className="text-xl text-teal-100">
@@ -106,12 +105,12 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
         </button>
 
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
+          <a href="/" className="lg:hidden flex items-center justify-center space-x-2 mb-8 hover:opacity-80 transition-opacity">
             <Activity className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
               PulseConnect
             </span>
-          </div>
+          </a>
 
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Sign In
@@ -188,18 +187,7 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-                />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                  Remember me
-                </span>
-              </label>
+            <div className="flex items-center justify-end">
               <Link
                 to="/forgot-password"
                 className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"

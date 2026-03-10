@@ -3,13 +3,14 @@
  * Modern, accessible landing page optimized for all ages
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   MessageSquare,
   Pill,
   Calendar,
   ArrowRight,
+  ArrowUp,
   Activity,
   FileText,
   Shield,
@@ -33,6 +34,21 @@ const LandingPage = ({ onLoginClick }) => {
   const [symptomText, setSymptomText] = useState("");
   const [symptomAnalysis, setSymptomAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Show/hide scroll-to-top button based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   // Analyze symptoms using public API
   const handleAnalyzeSymptoms = async () => {
@@ -58,7 +74,7 @@ const LandingPage = ({ onLoginClick }) => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden">
       <Navbar onLoginClick={onLoginClick} />
 
       {/* Hero Section - Elder-friendly with large text */}
@@ -67,7 +83,7 @@ const LandingPage = ({ onLoginClick }) => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-teal-100 dark:bg-teal-900/30 rounded-full blur-3xl opacity-40 -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-100 dark:bg-blue-900/30 rounded-full blur-3xl opacity-40 translate-y-1/2 -translate-x-1/2"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 md:py-24 lg:py-32 relative">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <div className="inline-flex items-center space-x-2 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 px-4 py-2 rounded-full text-base font-medium mb-6">
@@ -456,7 +472,7 @@ const LandingPage = ({ onLoginClick }) => {
             </div>
 
             {/* Contact Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 lg:p-10 shadow-xl border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-4 lg:p-10 shadow-xl border border-gray-100 dark:border-gray-700">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Get in Touch
               </h3>
@@ -776,7 +792,7 @@ const LandingPage = ({ onLoginClick }) => {
       {/* Stats Banner */}
       <section className="bg-gradient-to-r from-teal-600 via-teal-700 to-blue-700 py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
             {[
               { value: "50,000+", label: "Active Patients", icon: Users },
               { value: "500+", label: "Certified Doctors", icon: User },
@@ -825,6 +841,17 @@ const LandingPage = ({ onLoginClick }) => {
       </section>
 
       <Footer />
+
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-gradient-to-br from-teal-600 to-teal-700 text-white rounded-full shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 flex items-center justify-center"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 };

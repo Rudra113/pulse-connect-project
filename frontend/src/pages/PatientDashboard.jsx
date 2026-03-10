@@ -750,7 +750,9 @@ const PatientDashboard = ({ user, onLogout }) => {
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome back, {user?.name?.split(" ")[0] || "Patient"}!
+              {medications.length === 0 && chats.length === 0
+                ? `Welcome, ${user?.name?.split(" ")[0] || "Patient"}! 👋`
+                : `Welcome back, ${user?.name?.split(" ")[0] || "Patient"}!`}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Here's your health overview for today.
@@ -1125,7 +1127,7 @@ const PatientDashboard = ({ user, onLogout }) => {
                       return (
                         <div
                           key={med._id}
-                          className="p-6 hover:bg-gray-50 transition group"
+                          className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition group"
                         >
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             {/* Med Info */}
@@ -1140,15 +1142,15 @@ const PatientDashboard = ({ user, onLogout }) => {
                                 <Pill className="w-8 h-8 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-bold text-gray-900 text-xl">
+                                <h4 className="font-bold text-gray-900 dark:text-white text-xl">
                                   {med.medicineName}
                                 </h4>
-                                <p className="text-base text-gray-600 mt-1">
+                                <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
                                   {med.dailyDosage}x daily • {med.daysRemaining}{" "}
                                   days remaining
                                 </p>
                                 {med.notes && (
-                                  <p className="text-sm text-gray-400 mt-1 line-clamp-1">
+                                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 line-clamp-1">
                                     {med.notes}
                                   </p>
                                 )}

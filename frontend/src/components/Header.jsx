@@ -66,7 +66,7 @@ function Header({ user, onLogout, onAddMedication }) {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                MedTracker
+                PulseConnect
               </h1>
               <p className="text-xs text-gray-500 hidden sm:block">
                 Medication Tracker & Reminders
