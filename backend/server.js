@@ -166,9 +166,17 @@ app.listen(PORT, () => {
     console.log('🏥 MEDICATION TRACKER API');
     console.log('='.repeat(50));
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 API URL: http://localhost:${PORT}/api`);
-    console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    if (process.env.NODE_ENV === 'production') {
+        // In production, we don't know our own public URL easily, so we just log the port
+        // or we could use a custom env variable like BACKEND_URL if provided.
+        console.log(`📍 API running in production mode`);
+        console.log(`🌍 Environment: production`);
+    } else {
+        console.log(`📍 API URL: http://localhost:${PORT}/api`);
+        console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
+        console.log(`🌍 Environment: development`);
+    }
     console.log('='.repeat(50) + '\n');
 
     // Initialize the cron job for nightly medication checks
