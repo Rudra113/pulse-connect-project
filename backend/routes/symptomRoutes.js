@@ -8,13 +8,38 @@ const router = express.Router();
 const SymptomCheck = require('../models/SymptomCheck');
 const { protect } = require('../middleware/auth');
 const { analyzeSymptoms: geminiAnalyze } = require('../services/geminiService');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiting for public symptom analysis (3 requests per 15 minutes per IP)
+const publicAnalyzeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3,
+    message: {
+        success: false,
+        message: 'Too many analysis requests from this IP. Please try again after 15 minutes to prevent system abuse.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Rate limiting for logged-in users (5 requests per 15 minutes per IP)
+const privateAnalyzeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5,
+    message: {
+        success: false,
+        message: 'You have reached the limit for symptom checks. Please try again after 15 minutes.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 /**
  * @route   POST /api/symptoms/analyze-public
  * @desc    Public symptom analysis (no login required) - uses Gemini AI
  * @access  Public
  */
-router.post('/analyze-public', async (req, res) => {
+router.post('/analyze-public', publicAnalyzeLimiter, async (req, res) => {
     try {
         const { symptoms } = req.body;
 
@@ -53,7 +78,7 @@ router.post('/analyze-public', async (req, res) => {
  * @desc    Submit symptoms for analysis
  * @access  Private
  */
-router.post('/check', protect, async (req, res) => {
+router.post('/check', protect, privateAnalyzeLimiter, async (req, res) => {
     try {
         const { symptoms } = req.body;
 
