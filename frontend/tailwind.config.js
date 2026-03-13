@@ -15,7 +15,7 @@ module.exports = {
             '2xl': '1536px',
         },
         extend: {
-            // Custom colors for the medication tracker
+            // Custom colors for the Pulse Connect
             colors: {
                 primary: {
                     50: '#eff6ff',

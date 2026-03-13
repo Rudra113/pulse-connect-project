@@ -1,7 +1,7 @@
 {
   "name": "medication-tracker-backend",
   "version": "1.0.0",
-  "description": "Backend for Medication Tracker & Refill Reminder System",
+  "description": "Backend for Pulse Connect & Refill Reminder System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

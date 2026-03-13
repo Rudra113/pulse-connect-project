@@ -1,6 +1,6 @@
 /**
  * Server Entry Point
- * Main file for the Medication Tracker Backend
+ * Main file for the Pulse Connect Backend
  */
 
 // Load environment variables from .env file
@@ -89,7 +89,7 @@ connectDB();
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
-        message: 'Medication Tracker API is running',
+        message: 'Pulse Connect API is running',
         timestamp: new Date().toISOString()
     });
 });
@@ -163,7 +163,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🏥 MEDICATION TRACKER API');
+    console.log('🏥 Pulse Connect API');
     console.log('='.repeat(50));
     console.log(`🚀 Server running on port ${PORT}`);
     

@@ -1,4 +1,4 @@
-# 🏥 MedTracker - Medication Tracker & Refill Reminder System
+# 🏥 MedTracker - Pulse Connect & Refill Reminder System
 
 A full-stack MERN (MongoDB, Express, React, Node.js) web application for tracking medication inventory and receiving refill reminders.
 

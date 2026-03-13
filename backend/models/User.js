@@ -1,6 +1,6 @@
 /**
  * User Model
- * Defines the schema for user accounts in the medication tracker
+ * Defines the schema for user accounts in the Pulse Connect
  * Includes password hashing and JWT token generation
  */
 
