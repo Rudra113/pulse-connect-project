@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
    */
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("medtracker_token");
+      const token = localStorage.getItem("pulseconnect_token");
 
       if (token) {
         try {
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       // Call logout API to set offline status
-      const token = localStorage.getItem("medtracker_token");
+      const token = localStorage.getItem("pulseconnect_token");
       if (token) {
         await axios.post(
           `${API_URL}/auth/logout`,

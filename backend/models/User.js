@@ -292,6 +292,33 @@ userSchema.statics.findByCredentials = async function (email, password) {
     return user;
 };
 
+// Configure toJSON and toObject to dynamically calculate isOnline based on lastSeen
+userSchema.set('toJSON', {
+    transform: function (doc, ret) {
+        // If marked as online, verify they've been seen in the last 5 minutes
+        if (ret.isOnline && ret.lastSeen) {
+            const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+            if (new Date(ret.lastSeen).getTime() < fiveMinutesAgo) {
+                ret.isOnline = false;
+            }
+        }
+        return ret;
+    }
+});
+
+userSchema.set('toObject', {
+    transform: function (doc, ret) {
+        // If marked as online, verify they've been seen in the last 5 minutes
+        if (ret.isOnline && ret.lastSeen) {
+            const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+            if (new Date(ret.lastSeen).getTime() < fiveMinutesAgo) {
+                ret.isOnline = false;
+            }
+        }
+        return ret;
+    }
+});
+
 // Create and export the User model
 const User = mongoose.model('User', userSchema);
 
